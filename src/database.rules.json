@@ -1,0 +1,98 @@
+
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["screenName_lowercase"],
+      "$uid": {
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "users_screenames": {
+      ".read": "auth != null",
+      "$screenname": {
+        ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
+      }
+    },
+    "requests": {
+      ".read": "auth != null",
+      ".indexOn": ["status", "memberId"],
+      "$requestId": {
+        ".write": "auth != null"
+      }
+    },
+    "reviews": {
+      "$listenerId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "status": {
+      "$identity": {
+        ".read": true,
+        ".write": "auth != null && $identity.beginsWith(auth.uid)",
+        ".validate": "newData.hasChildren(['state', 'last_changed']) && newData.child('state').isString() && (newData.child('state').val() === 'online' || newData.child('state').val() === 'busy' || newData.child('state').val() === 'offline')"
+      }
+    },
+    "notifications": {
+      "$identity": {
+        ".read": "auth != null && $identity.beginsWith(auth.uid)",
+        ".write": "auth != null && $identity.beginsWith(auth.uid)"
+      }
+    },
+    "reports": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$reportId": {
+        ".write": "auth != null"
+      }
+    },
+    "user_chats": {
+      "$identity": {
+        ".read": "auth != null && $identity.beginsWith(auth.uid)",
+        ".write": "auth != null && $identity.beginsWith(auth.uid)"
+      }
+    },
+    "user_calls": {
+      "$identity": {
+        ".read": "auth != null && $identity.beginsWith(auth.uid)",
+        ".write": "auth != null && $identity.beginsWith(auth.uid)"
+      }
+    },
+    "calls": {
+      "$callId": {
+        ".read": "auth != null && (data.child('participants').hasChild(auth.uid + '_member') || data.child('participants').hasChild(auth.uid + '_listener'))",
+        ".write": "auth != null && (!data.exists() || data.child('participants').hasChild(auth.uid + '_member') || data.child('participants').hasChild(auth.uid + '_listener'))",
+        "participants": {
+          "$identity": {
+            ".write": "auth != null && $identity.beginsWith(auth.uid)",
+            ".validate": "newData.hasChild('status')"
+          }
+        }
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null && (data.child('participants').child(auth.uid + '_member').exists() || data.child('participants').child(auth.uid + '_listener').exists())",
+        ".write": "auth != null && (newData.child('participants').child(auth.uid + '_member').exists() || newData.child('participants').child(auth.uid + '_listener').exists() || data.child('participants').child(auth.uid + '_member').exists() || data.child('participants').child(auth.uid + '_listener').exists())",
+        "systemType": {
+          ".validate": "(!data.exists() && (newData.val() == 'listener-member' || newData.val() == 'member-member' || newData.val() == 'listener-listener')) || (data.exists() && newData.val() == data.val())"
+        },
+        "participants": {
+          ".validate": "newData.exists()"
+        },
+        "messages": {
+            "$messageId": {
+              ".write": "newData.child('senderId').val().beginsWith(auth.uid)"
+            }
+        },
+        "unread": {
+          "$identity": {
+            ".write": "auth != null && ($identity.beginsWith(auth.uid) || newData.parent().parent().child('participants').child(auth.uid + '_member').exists() || newData.parent().parent().child('participants').child(auth.uid + '_listener').exists())",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    }
+  }
+}
+    

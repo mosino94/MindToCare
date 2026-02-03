@@ -1,0 +1,10 @@
+
+node_modules
+.next
+.git
+firebase-debug.log
+.firebaserc
+firestore.rules
+firestore.indexes.json
+.gitignore
+.firebaseignore

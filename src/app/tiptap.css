@@ -1,0 +1,115 @@
+.tiptap {
+    /* @apply rounded-md border bg-background; */
+    @apply flex flex-col;
+}
+
+.tiptap.fullscreen {
+    @apply h-full w-full max-w-full;
+}
+
+.tiptap .ProseMirror {
+    @apply p-4 focus:outline-none;
+    min-height: 15rem;
+}
+.tiptap.fullscreen .ProseMirror {
+    @apply flex-1 overflow-y-auto min-h-0;
+}
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+/* Headings */
+.tiptap .ProseMirror h1 {
+  @apply text-3xl font-bold;
+}
+.tiptap .ProseMirror h2 {
+  @apply text-2xl font-semibold;
+}
+
+/* Lists */
+.tiptap .ProseMirror ul,
+.tiptap .ProseMirror ol {
+  @apply pl-6;
+}
+.tiptap .ProseMirror ul {
+  @apply list-disc;
+}
+.tiptap .ProseMirror ol {
+  @apply list-decimal;
+}
+
+/* Indentation / Blockquote */
+.tiptap .ProseMirror blockquote {
+    border-left: none;
+    padding-left: 2rem;
+    margin-left: 0;
+}
+
+
+/* Links */
+.tiptap .ProseMirror a {
+  @apply text-primary underline cursor-pointer;
+}
+
+/* Horizontal Rule */
+.tiptap .ProseMirror hr {
+    border: none;
+    height: 1px;
+    background-color: hsl(var(--border));
+    margin: 1rem 0;
+}
+
+/* Image */
+.tiptap .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+}
+
+.tiptap .ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid hsl(var(--ring));
+}
+
+.tiptap-toolbar {
+    @apply flex flex-wrap items-center gap-1 p-1;
+}
+
+.tiptap-toolbar.sticky-toolbar {
+    @apply sticky top-0 z-10 bg-background;
+}
+.tiptap-toolbar.sticky-toolbar.fullscreen {
+    @apply border-t;
+}
+
+.tiptap:not(.fullscreen) .toolbar-separator {
+    @apply border-b;
+}
+
+
+/* Color Picker */
+.color-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: 4px;
+}
+
+.color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: transform 0.1s ease-in-out;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    border-color: hsl(var(--foreground));
+}

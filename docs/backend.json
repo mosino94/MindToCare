@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user was created."
+        }
+      },
+      "required": ["displayName", "email", "createdAt"]
+    },
+    "JournalEntry": {
+      "title": "Journal Entry",
+      "description": "A single journal entry for a user.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the journal entry."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main content of the journal entry."
+        },
+        "mood": {
+          "type": "string",
+          "description": "The user's mood when writing the entry."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the entry was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the entry was last updated."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this entry."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the journal entry.",
+          "enum": ["active", "deleted"]
+        }
+      },
+      "required": ["title", "content", "createdAt", "userId", "status"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserProfile"
+      },
+      "description": "Stores public information about a user. Only accessible by the owner."
+    },
+    "/users/{userId}/journals/{journalId}": {
+      "schema": {
+        "$ref": "#/backend/entities/JournalEntry"
+      },
+      "description": "Stores a user's journal entries. Only accessible by the owner."
+    }
+  }
+}

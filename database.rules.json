@@ -1,0 +1,67 @@
+
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["screenName_lowercase"],
+      "$uid": {
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "users_screenames": {
+      ".read": "auth != null",
+      "$screenname": {
+        ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
+      }
+    },
+    "requests": {
+      ".read": "auth != null",
+      ".indexOn": ["status", "memberId"],
+      "$requestId": {
+        ".write": "auth != null"
+      }
+    },
+    "reviews": {
+      "$listenerId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "status": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "notifications": {
+      "$identity": {
+        ".read": "auth != null && $identity.beginsWith(auth.uid)",
+        ".write": "auth != null && $identity.beginsWith(auth.uid)"
+      }
+    },
+    "reports": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$reportId": {
+        ".write": "auth != null"
+      }
+    },
+    "user_chats": {
+      "$identity": {
+        ".read": "auth != null && $identity.startsWith(auth.uid)",
+        ".write": "auth != null && $identity.startsWith(auth.uid)"
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null && (data.child('participants').child(auth.uid + '_member').exists() || data.child('participants').child(auth.uid + '_listener').exists())",
+        ".write": "auth != null && (newData.child('participants').child(auth.uid + '_member').exists() || newData.child('participants').child(auth.uid + '_listener').exists() || data.child('participants').child(auth.uid + '_member').exists() || data.child('participants').child(auth.uid + '_listener').exists())",
+        "systemType": {
+          ".validate": "(!data.exists() && (newData.val() == 'listener-member' || newData.val() == 'member-member' || newData.val() == 'listener-listener')) || (data.exists() && newData.val() == data.val())"
+        },
+        "participants": {
+          ".validate": "newData.exists()"
+        }
+      }
+    }
+  }
+}
