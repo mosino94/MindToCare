@@ -550,157 +550,159 @@ export function Header() {
                     </nav>
 
                     <div className="flex items-center justify-end space-x-1 ml-auto">
+                        {/* Journal Icon - Only for members, show skeleton while loading */}
                         {loading ? (
-                            <div className="flex items-center space-x-2">
-                                <Skeleton className="h-9 w-9 rounded-md" />
+                            <Skeleton className="h-9 w-9 rounded-md" />
+                        ) : role === 'member' ? (
+                            <Popover open={isJournalPopoverOpen} onOpenChange={setIsJournalPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                                        <BookMarked className="h-5 w-5" />
+                                        <span className="sr-only">Journal</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <JournalPopoverContent
+                                    setIsNewJournalOpen={setIsNewJournalOpen}
+                                    setEditData={setEditData}
+                                    setViewJournal={setViewJournal}
+                                    onClose={() => setIsJournalPopoverOpen(false)}
+                                />
+                            </Popover>
+                        ) : null}
+
+                        {/* Theme Toggle - Always visible */}
+                        <ThemeToggle />
+
+                        {/* Desktop actions: Notifications and User Profile */}
+                        {loading ? (
+                            <div className="hidden md:flex items-center space-x-1">
                                 <Skeleton className="h-9 w-9 rounded-md" />
                                 <Skeleton className="h-9 w-9 rounded-full" />
                             </div>
                         ) : (
-                            <>
-                                {role === 'member' && (
-                                    <Popover open={isJournalPopoverOpen} onOpenChange={setIsJournalPopoverOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-9 w-9">
-                                                <BookMarked className="h-5 w-5" />
-                                                <span className="sr-only">Journal</span>
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <JournalPopoverContent
-                                            setIsNewJournalOpen={setIsNewJournalOpen}
-                                            setEditData={setEditData}
-                                            setViewJournal={setViewJournal}
-                                            onClose={() => setIsJournalPopoverOpen(false)}
-                                        />
-                                    </Popover>
-                                )}
-                                <ThemeToggle />
-                                {!isMobile && (
-                                    <>
-                                        <Popover onOpenChange={(open) => { if (!open) { handleMarkNotificationsAsRead(); } }}>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                                                    <Bell className="h-5 w-5" />
-                                                    {notifications.length > 0 && (
-                                                        <span className="absolute top-1 right-1 flex min-w-[1rem] h-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                                                            {notifications.length}
-                                                        </span>
-                                                    )}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent align="end" className="w-80 mt-2">
-                                                <Card className="border-none shadow-none">
-                                                    <CardHeader className="p-2 pt-0">
-                                                        <CardTitle className="text-base">Notifications</CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="p-2 pt-0 max-h-80 overflow-y-auto">
-                                                        {notifications.length === 0 ? (
-                                                            <div className="text-center text-muted-foreground py-4">
-                                                                <Bell className="h-8 w-8 mx-auto mb-2" />
-                                                                <p className="text-sm">You're all caught up!</p>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="space-y-2">
-                                                                {notifications.map(n => (
-                                                                    <div key={n.id} className="text-sm p-2 rounded-md bg-accent/50">
-                                                                        {n.message}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </CardContent>
-                                                </Card>
-                                            </PopoverContent>
-                                        </Popover>
-
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={photoURL || undefined} alt={screenName || 'User'} />
-                                                        <AvatarFallback>{getInitials(screenName)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className={cn(
-                                                        "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background",
-                                                        getStatusColor(realtimeStatus)
-                                                    )} />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-56" align="end" forceMount>
-                                                <DropdownMenuLabel className="font-normal">
-                                                    <div className="flex flex-col space-y-1">
-                                                        <p className="text-sm font-medium leading-none truncate">{screenName || user?.email}</p>
-                                                        <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+                            <div className="hidden md:flex items-center space-x-1">
+                                <Popover onOpenChange={(open) => { if (!open) { handleMarkNotificationsAsRead(); } }}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                                            <Bell className="h-5 w-5" />
+                                            {notifications.length > 0 && (
+                                                <span className="absolute top-1 right-1 flex min-w-[1rem] h-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                                                    {notifications.length}
+                                                </span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-80 mt-2">
+                                        <Card className="border-none shadow-none">
+                                            <CardHeader className="p-2 pt-0">
+                                                <CardTitle className="text-base">Notifications</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="p-2 pt-0 max-h-80 overflow-y-auto">
+                                                {notifications.length === 0 ? (
+                                                    <div className="text-center text-muted-foreground py-4">
+                                                        <Bell className="h-8 w-8 mx-auto mb-2" />
+                                                        <p className="text-sm">You're all caught up!</p>
                                                     </div>
-                                                </DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                {role === 'listener' && (
-                                                    <>
-                                                        <div className="p-2">
-                                                            <p className="text-xs font-medium text-muted-foreground mb-2">Set Status</p>
-                                                            <RadioGroup value={manualStatus} onValueChange={(v) => handleStatusChange(v as ManualStatus)}>
-                                                                <div className="flex items-center space-x-2 cursor-pointer">
-                                                                    <RadioGroupItem value="available" id="available-header" />
-                                                                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                                                    <Label htmlFor="available-header" className="cursor-pointer text-sm font-normal">Online</Label>
-                                                                </div>
-                                                                <div className="flex items-center space-x-2 cursor-pointer">
-                                                                    <RadioGroupItem value="busy" id="busy-header" />
-                                                                    <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-                                                                    <Label htmlFor="busy-header" className="cursor-pointer text-sm font-normal">Busy</Label>
-                                                                </div>
-                                                                <div className="flex items-center space-x-2 cursor-pointer">
-                                                                    <RadioGroupItem value="offline" id="offline-header" />
-                                                                    <span className="h-2 w-2 rounded-full bg-slate-400"></span>
-                                                                    <Label htmlFor="offline-header" className="cursor-pointer text-sm font-normal">Offline</Label>
-                                                                </div>
-                                                            </RadioGroup>
-                                                        </div>
-                                                        <DropdownMenuSeparator />
-                                                    </>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {notifications.map(n => (
+                                                            <div key={n.id} className="text-sm p-2 rounded-md bg-accent/50">
+                                                                {n.message}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 )}
-                                                <DropdownMenuItem asChild>
-                                                    <Link href="/profile">
-                                                        <UserIcon className="mr-2 h-4 w-4" />
-                                                        <span>Profile</span>
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href="/settings">
-                                                        <Settings className="mr-2 h-4 w-4" />
-                                                        <span>Settings</span>
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href="/admin">
-                                                        <Shield className="mr-2 h-4 w-4" />
-                                                        <span>Admin</span>
-                                                    </Link>
-                                                </DropdownMenuItem>
+                                            </CardContent>
+                                        </Card>
+                                    </PopoverContent>
+                                </Popover>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={photoURL || undefined} alt={screenName || 'User'} />
+                                                <AvatarFallback>{getInitials(screenName)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className={cn(
+                                                "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background",
+                                                getStatusColor(realtimeStatus)
+                                            )} />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none truncate">{screenName || user?.email}</p>
+                                                <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {role === 'listener' && (
+                                            <>
+                                                <div className="p-2">
+                                                    <p className="text-xs font-medium text-muted-foreground mb-2">Set Status</p>
+                                                    <RadioGroup value={manualStatus} onValueChange={(v) => handleStatusChange(v as ManualStatus)}>
+                                                        <div className="flex items-center space-x-2 cursor-pointer">
+                                                            <RadioGroupItem value="available" id="available-header" />
+                                                            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                                            <Label htmlFor="available-header" className="cursor-pointer text-sm font-normal">Online</Label>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2 cursor-pointer">
+                                                            <RadioGroupItem value="busy" id="busy-header" />
+                                                            <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                                                            <Label htmlFor="busy-header" className="cursor-pointer text-sm font-normal">Busy</Label>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2 cursor-pointer">
+                                                            <RadioGroupItem value="offline" id="offline-header" />
+                                                            <span className="h-2 w-2 rounded-full bg-slate-400"></span>
+                                                            <Label htmlFor="offline-header" className="cursor-pointer text-sm font-normal">Offline</Label>
+                                                        </div>
+                                                    </RadioGroup>
+                                                </div>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
-                                                    <AlertTriangle className="mr-2 h-4 w-4" />
-                                                    <span>Report an Issue</span>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={handleRoleSwitch}>
-                                                    <Repeat className="mr-2 h-4 w-4" />
-                                                    <span>
-                                                        {role === 'listener'
-                                                            ? (memberProfileCompleted ? 'Switch to Member' : 'Become a Member')
-                                                            : (hasCompletedListenerProfile ? 'Switch to Listener' : 'Become a Listener')}
-                                                    </span>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                                                    <LogOut className="mr-2 h-4 w-4" />
-                                                    <span>Sign Out</span>
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </>
-                                )}
-                            </>
+                                            </>
+                                        )}
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/profile">
+                                                <UserIcon className="mr-2 h-4 w-4" />
+                                                <span>Profile</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/settings">
+                                                <Settings className="mr-2 h-4 w-4" />
+                                                <span>Settings</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/admin">
+                                                <Shield className="mr-2 h-4 w-4" />
+                                                <span>Admin</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
+                                            <AlertTriangle className="mr-2 h-4 w-4" />
+                                            <span>Report an Issue</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleRoleSwitch}>
+                                            <Repeat className="mr-2 h-4 w-4" />
+                                            <span>
+                                                {role === 'listener'
+                                                    ? (memberProfileCompleted ? 'Switch to Member' : 'Become a Member')
+                                                    : (hasCompletedListenerProfile ? 'Switch to Listener' : 'Become a Listener')}
+                                            </span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Sign Out</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         )}
                     </div>
                 </div>
