@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Home, MessageCircle, User, HeartHandshake, Bell, LogOut, Settings, Shield, Repeat, AlertTriangle, Search } from 'lucide-react';
@@ -346,14 +347,14 @@ export function BottomNavBar() {
                 <CardHeader className="p-2 pt-0">
                   <CardTitle className="text-base">Notifications</CardTitle>
                 </CardHeader>
-                <CardContent className="p-2 pt-0">
+                <CardContent className="p-2 pt-0 max-h-64 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center py-8 px-4 border-2 border-dashed rounded-lg bg-card">
-                      <Bell className="h-10 w-10 text-muted-foreground mb-3" />
-                      <h3 className="text-lg font-semibold mb-1">None</h3>
+                    <div className="text-center py-8">
+                      <Bell className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm">No notifications.</p>
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-2">
                       {notifications.map(n => (
                         <div key={n.id} className="text-sm p-2 rounded-md bg-accent/50">
                           {n.message}

@@ -103,7 +103,7 @@ function ViewJournalDialog({
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
                     <div
-                        className="prose dark:prose-invert max-w-none break-words [overflow-wrap:anywhere] text-left w-full"
+                        className="prose dark:prose-invert max-w-none break-words [overflow-wrap:anywhere] text-left w-full overflow-x-hidden"
                         dangerouslySetInnerHTML={{ __html: journal.content || '' }}
                     />
                 </div>
