@@ -119,6 +119,18 @@ function JournalPopoverContent({
     }, [user, db]);
 
     const { data: journals, isLoading } = useCollection(q);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredJournals = useMemo(() => {
+        if (!journals) return [];
+        if (!searchTerm.trim()) return journals;
+
+        const term = searchTerm.toLowerCase();
+        return journals.filter(journal =>
+            journal.title?.toLowerCase().includes(term) ||
+            journal.content?.toLowerCase().includes(term)
+        );
+    }, [journals, searchTerm]);
 
     useEffect(() => {
         // Silent success
@@ -172,13 +184,32 @@ function JournalPopoverContent({
     return (
         <PopoverContent align="end" className="w-80 mt-2 p-0">
             <Card className="border-none shadow-none">
-                <CardHeader className="flex flex-row items-center justify-between p-4">
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
                     <CardTitle className="text-lg font-headline">My Journal</CardTitle>
                     <Button variant="destructive" size="icon" className="h-7 w-7" onClick={handleNew}>
                         <Plus className="h-4 w-4" />
                         <span className="sr-only">New Journal Entry</span>
                     </Button>
                 </CardHeader>
+                <div className="px-4 pb-2">
+                    <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="Search keywords..."
+                            className="h-8 pl-8 pr-8 text-xs bg-accent/50 border-none focus-visible:ring-1"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
                 <CardContent className="p-0">
                     <ScrollArea className="h-80">
                         <div className="p-4 pt-0">
@@ -186,9 +217,9 @@ function JournalPopoverContent({
                                 <div className="flex items-center justify-center h-full py-10">
                                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                 </div>
-                            ) : journals && journals.length > 0 ? (
+                            ) : filteredJournals && filteredJournals.length > 0 ? (
                                 <ul className="space-y-2">
-                                    {journals.map((journal) => (
+                                    {filteredJournals.map((journal) => (
                                         <li key={journal.id} className="group">
                                             <div
                                                 className="p-3 rounded-md hover:bg-accent cursor-pointer transition-colors"
@@ -232,8 +263,17 @@ function JournalPopoverContent({
                                 </ul>
                             ) : (
                                 <div className="flex flex-col items-center justify-center text-center py-10">
-                                    <BookOpen className="h-10 w-10 text-muted-foreground mb-3" />
-                                    <p className="text-sm text-muted-foreground">No journal entries yet.</p>
+                                    {searchTerm ? (
+                                        <>
+                                            <Search className="h-10 w-10 text-muted-foreground mb-3 opacity-20" />
+                                            <p className="text-sm text-muted-foreground px-4">No results for "{searchTerm}"</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <BookOpen className="h-10 w-10 text-muted-foreground mb-3" />
+                                            <p className="text-sm text-muted-foreground">No journal entries yet.</p>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -522,8 +562,8 @@ export function Header() {
                         href={getHomePath()}
                         className="flex items-center gap-2 mr-6"
                     >
-                        <Icons.logo className="h-6 w-auto" />
-                        <h1 className="text-md md:text-lg font-bold font-headline">MindToCare</h1>
+                        <img src="/logo.png" alt="MindToCare Logo" className="h-8 w-auto" />
+                        <h1 className="text-md md:text-lg font-bold font-headline hidden sm:block">MindToCare</h1>
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-4 lg:gap-6">

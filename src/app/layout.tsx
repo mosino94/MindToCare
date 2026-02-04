@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   description: 'A safe space for connection and support.',
   generator: null,
   icons: {
-    icon: logoUrl,
-    shortcut: logoUrl,
-    apple: logoUrl,
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
 };
 
@@ -35,8 +35,8 @@ export default function RootLayout({
       <head />
       <body className="font-body antialiased">
         <Providers>
-            <AppLayout>{children}</AppLayout>
-            <Toaster />
+          <AppLayout>{children}</AppLayout>
+          <Toaster />
         </Providers>
       </body>
     </html>
