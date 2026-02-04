@@ -19,51 +19,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profileCompleted, loading } = useAuth();
   const pathname = usePathname();
   const isMobile = useIsMobile();
-  
-  if (loading) {
-    // Show a layout skeleton during the initial app load, which is better than a blank screen.
-    return (
-       <div className="flex min-h-screen w-full flex-col bg-background">
-         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
-            <div className="container flex h-16 items-center px-4">
-               <Skeleton className="h-8 w-36" />
-               <div className="flex items-center space-x-2 ml-auto">
-                   <Skeleton className="h-9 w-9" />
-                   <Skeleton className="h-9 w-9 rounded-full" />
-               </div>
-            </div>
-         </header>
-        <main className="flex flex-1 items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </main>
-      </div>
-    );
-  }
 
   // These pages have their own full-page layout and should not be wrapped by the main app layout.
   const isFullPage = pathname.startsWith('/login') || pathname.startsWith('/listener/training');
-  
-  if (!user || isFullPage) {
-      return (
-          <main className="flex min-h-screen flex-1 flex-col">{children}</main>
-      );
+
+  if (isFullPage || (!loading && !user)) {
+    return (
+      <main className="flex min-h-screen flex-1 flex-col">{children}</main>
+    );
   }
-  
+
   return (
-       <div className={cn("flex min-h-screen w-full flex-col bg-background")}>
-        <Header />
-        <PresenceManager />
-        <main className={cn("flex flex-1 flex-col", isMobile ? "pb-20" : "")}>
-            {children}
-        </main>
-        {profileCompleted && (
-          <>
-            <FindListenerDialog />
-            <CallUI />
-            <CallBanner />
-            {isMobile ? <BottomNavBar /> : <DesktopActionButton />}
-          </>
+    <div className={cn("flex min-h-screen w-full flex-col bg-background")}>
+      <Header />
+      <PresenceManager />
+      <main className={cn("flex flex-1 flex-col", isMobile ? "pb-20" : "")}>
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        ) : (
+          children
         )}
-      </div>
+      </main>
+      {/* Navigation components remain visible even if loading, as long as user exists */}
+      {(user || loading) && !isFullPage && (
+        <>
+          <FindListenerDialog />
+          <CallUI />
+          <CallBanner />
+          {isMobile ? <BottomNavBar /> : <DesktopActionButton />}
+        </>
+      )}
+    </div>
   );
 }

@@ -8,11 +8,17 @@ import { HeartHandshake, Search } from 'lucide-react';
 import { useCall } from '@/hooks/use-call';
 
 export function DesktopActionButton() {
-  const { role } = useAuth();
+  const { role, loading } = useAuth();
   const memberContext = useContext(MemberPageContext);
   const { pendingRequest } = useCall();
 
-  const setIsRequestDialogOpen = memberContext?.setIsRequestDialogOpen ?? (() => {});
+  const setIsRequestDialogOpen = memberContext?.setIsRequestDialogOpen ?? (() => { });
+
+  if (loading) {
+    return (
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center w-16 h-16 bg-muted rounded-full shadow-lg z-40" />
+    );
+  }
 
   if (role === 'member') {
     return (
