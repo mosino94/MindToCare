@@ -56,7 +56,7 @@ const baseProfileSchema = z.object({
 const createProfileSchema = (isListener: boolean) => {
     let schema: z.ZodTypeAny = baseProfileSchema;
     if (isListener) {
-        schema = schema
+        schema = (schema as z.ZodObject<any>)
             .refine(data => !!data.profilePicture || !!data.selectedAvatar, {
                 message: "Please upload a profile picture or select a default avatar.",
                 path: ["profilePicture"],

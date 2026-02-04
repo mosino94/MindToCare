@@ -51,7 +51,7 @@ const moodEmojis: { [key: string]: string } = {
 const createSnippet = (html: string, length = 50) => {
     if (!html) return '';
     const text = html.replace(/<[^>]+>/g, '');
-    if (text.length <= length) text;
+    if (text.length <= length) return text;
     return text.substring(0, length) + '...';
 };
 
@@ -77,31 +77,27 @@ function ViewJournalDialog({
             <DialogContent className={cn(
                 "flex flex-col p-0 transition-all duration-300 overflow-hidden",
                 isFullscreen 
-                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100] translate-x-0 translate-y-0 left-0 top-0 transform-none" 
+                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100] left-0 top-0 translate-x-0 translate-y-0 transform-none" 
                     : "sm:max-w-2xl max-h-[90vh] rounded-lg"
             )}>
-                <DialogHeader className="p-6 pb-2 shrink-0 border-b relative">
-                    <div className="flex items-start gap-4">
-                        <div className="flex items-center gap-2 flex-shrink-0 pt-1">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground" 
-                                onClick={() => setIsFullscreen(!isFullscreen)}
-                                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                            >
-                                {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-                            </Button>
-                        </div>
-                        <div className="flex-1 min-w-0 pr-8">
-                            <DialogTitle className="text-xl md:text-2xl font-bold break-all whitespace-normal leading-tight text-left">
-                                {journal.title}
-                            </DialogTitle>
-                            <DialogDescription className="mt-1 flex items-center gap-2 text-left">
-                                {journal.mood && <span className="text-lg" title={journal.mood}>{moodEmojis[journal.mood]}</span>}
-                                <span>{journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}</span>
-                            </DialogDescription>
-                        </div>
+                <DialogHeader className="p-6 pb-2 shrink-0 border-b relative flex-row items-start gap-4">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 mt-1" 
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                    >
+                        {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                    </Button>
+                    <div className="flex-1 min-w-0 pr-8">
+                        <DialogTitle className="text-xl md:text-2xl font-bold break-words whitespace-normal leading-tight text-left">
+                            {journal.title}
+                        </DialogTitle>
+                        <DialogDescription className="mt-1 flex items-center gap-2 text-left">
+                            {journal.mood && <span className="text-lg" title={journal.mood}>{moodEmojis[journal.mood]}</span>}
+                            <span>{journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}</span>
+                        </DialogDescription>
                     </div>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
@@ -205,6 +201,15 @@ function JournalPopoverContent({
             <Card className="border-none shadow-none relative h-[500px] flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 shrink-0">
                     <CardTitle className="text-lg font-headline">My Journal</CardTitle>
+                    <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-full shadow-md bg-red-600 hover:bg-red-700 shrink-0" 
+                        onClick={handleNew}
+                    >
+                        <Plus className="h-4 w-4" />
+                        <span className="sr-only">New Journal Entry</span>
+                    </Button>
                 </CardHeader>
                 <div className="px-4 pb-2 shrink-0">
                     <div className="relative">
@@ -233,7 +238,7 @@ function JournalPopoverContent({
                                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                 </div>
                             ) : filteredJournals && filteredJournals.length > 0 ? (
-                                <ul className="space-y-2 mb-16">
+                                <ul className="space-y-2">
                                     {filteredJournals.map((journal) => (
                                         <li key={journal.id} className="group">
                                             <div
@@ -293,17 +298,6 @@ function JournalPopoverContent({
                             )}
                         </div>
                     </ScrollArea>
-                    <div className="absolute bottom-4 right-4 z-10">
-                        <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="h-12 w-12 rounded-full shadow-2xl hover:scale-110 transition-transform bg-red-600 hover:bg-red-700" 
-                            onClick={handleNew}
-                        >
-                            <Plus className="h-6 w-6" />
-                            <span className="sr-only">New Journal Entry</span>
-                        </Button>
-                    </div>
                 </CardContent>
             </Card>
         </PopoverContent>
