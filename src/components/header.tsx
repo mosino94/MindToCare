@@ -36,6 +36,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
+import { Skeleton } from './ui/skeleton';
 
 
 const moodEmojis: { [key: string]: string } = {
@@ -526,7 +527,7 @@ export function Header() {
                         <h1 className="text-md md:text-lg font-bold font-headline">MindToCare</h1>
                     </Link>
 
-                    {!isMobile && <nav className="flex items-center gap-4 lg:gap-6">
+                    <nav className="hidden md:flex items-center gap-4 lg:gap-6">
                         {navItems.map(item => (
                             <Link
                                 key={item.href}
@@ -546,7 +547,7 @@ export function Header() {
                                 )}
                             </Link>
                         ))}
-                    </nav>}
+                    </nav>
 
                     <div className="flex items-center justify-end space-x-1 ml-auto">
                         {loading ? (

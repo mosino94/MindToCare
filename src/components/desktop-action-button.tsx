@@ -16,7 +16,7 @@ export function DesktopActionButton() {
 
   if (loading) {
     return (
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center w-16 h-16 bg-muted rounded-full shadow-lg z-40" />
+      <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 items-center justify-center w-16 h-16 bg-muted rounded-full shadow-lg z-40" />
     );
   }
 
@@ -24,7 +24,7 @@ export function DesktopActionButton() {
     return (
       <button
         onClick={() => setIsRequestDialogOpen(true)}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center w-16 h-16 bg-primary rounded-full text-primary-foreground shadow-lg transition-transform hover:scale-105 z-40"
+        className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 items-center justify-center w-16 h-16 bg-primary rounded-full text-primary-foreground shadow-lg transition-transform hover:scale-105 z-40"
         aria-label="Find Support"
       >
         {pendingRequest ? (
@@ -41,7 +41,7 @@ export function DesktopActionButton() {
 
   if (role === 'listener') {
     return (
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+      <div className="hidden md:block fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
         <ListenerRequestNotifier isBottomNav={true} />
       </div>
     );

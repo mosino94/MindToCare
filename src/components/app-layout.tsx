@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className={cn("flex min-h-screen w-full flex-col bg-background")}>
       <Header />
       <PresenceManager />
-      <main className={cn("flex flex-1 flex-col", isMobile ? "pb-20" : "")}>
+      <main className="flex flex-1 flex-col pb-20 md:pb-0">
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -48,7 +48,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <FindListenerDialog />
           <CallUI />
           <CallBanner />
-          {isMobile ? <BottomNavBar /> : <DesktopActionButton />}
+          <BottomNavBar />
+          <DesktopActionButton />
         </>
       )}
     </div>
