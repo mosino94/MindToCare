@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, database } from '@/lib/firebase';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2, Search, X } from 'lucide-react';
+import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { Icons } from './icons';
 import {
     DropdownMenu,
@@ -68,25 +68,73 @@ function ViewJournalDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const contentRef = useRef<HTMLDivElement>(null);
+
     if (!journal) return null;
+
+    const scrollToTop = () => {
+        contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const scrollToBottom = () => {
+        if (contentRef.current) {
+            contentRef.current.scrollTo({
+                top: contentRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle className="flex items-center justify-between pr-8">
-                        <span>{journal.title}</span>
-                        {journal.mood && <span className="text-2xl">{moodEmojis[journal.mood]}</span>}
+                        <span className="text-xl md:text-2xl font-headline">{journal.title}</span>
+                        {journal.mood && <span className="text-2xl md:text-3xl">{moodEmojis[journal.mood]}</span>}
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-sm md:text-base">
                         {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto">
+                <div className="relative flex-1 overflow-hidden group">
                     <div
-                        className="prose dark:prose-invert max-w-none p-4"
-                        dangerouslySetInnerHTML={{ __html: journal.content || '' }}
-                    />
+                        ref={contentRef}
+                        className="h-full overflow-y-auto p-6 pt-2 scrollbar-hide"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        <style jsx global>{`
+                            .scrollbar-hide::-webkit-scrollbar {
+                                display: none;
+                            }
+                        `}</style>
+                        <div
+                            className="prose dark:prose-invert max-w-none pb-20"
+                            dangerouslySetInnerHTML={{ __html: journal.content || '' }}
+                        />
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div className="absolute bottom-4 right-4 flex flex-col gap-2 transition-opacity duration-300">
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            onClick={scrollToTop}
+                            className="h-10 w-10 rounded-full shadow-lg border bg-background/80 backdrop-blur-sm hover:bg-background"
+                            title="Scroll to Top"
+                        >
+                            <ChevronUp className="h-5 w-5" />
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            onClick={scrollToBottom}
+                            className="h-10 w-10 rounded-full shadow-lg border bg-background/80 backdrop-blur-sm hover:bg-background"
+                            title="Scroll to Bottom"
+                        >
+                            <ChevronDown className="h-5 w-5" />
+                        </Button>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
@@ -212,7 +260,7 @@ function JournalPopoverContent({
                     </div>
                 </div>
                 <CardContent className="p-0">
-                    <ScrollArea className="h-80">
+                    <ScrollArea className="h-80" type="always">
                         <div className="p-4 pt-0">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-full py-10">
