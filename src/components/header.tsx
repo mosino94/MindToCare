@@ -216,7 +216,7 @@ function JournalPopoverContent({
                     <div className="relative">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
-                            placeholder="Search keywords..."
+                            placeholder="Search your entries..."
                             className="h-8 pl-8 pr-8 text-xs bg-accent/50 border-none focus-visible:ring-1"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
