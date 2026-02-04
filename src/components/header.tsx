@@ -69,6 +69,36 @@ function ViewJournalDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const contentRef = useRef<HTMLDivElement>(null);
+    const [showNav, setShowNav] = useState(false);
+    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowNav(true);
+
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+            }
+
+            scrollTimeoutRef.current = setTimeout(() => {
+                setShowNav(false);
+            }, 2000);
+        };
+
+        const currentRef = contentRef.current;
+        if (currentRef) {
+            currentRef.addEventListener('scroll', handleScroll);
+        }
+
+        return () => {
+            if (currentRef) {
+                currentRef.removeEventListener('scroll', handleScroll);
+            }
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+            }
+        };
+    }, []);
 
     if (!journal) return null;
 
@@ -115,7 +145,12 @@ function ViewJournalDialog({
                     </div>
 
                     {/* Navigation Buttons */}
-                    <div className="absolute bottom-4 right-4 flex flex-col gap-2 transition-opacity duration-300">
+                    <div
+                        className={cn(
+                            "absolute bottom-4 right-4 flex flex-col gap-2 transition-opacity duration-500",
+                            showNav ? "opacity-100" : "opacity-0 pointer-events-none"
+                        )}
+                    >
                         <Button
                             variant="secondary"
                             size="icon"
