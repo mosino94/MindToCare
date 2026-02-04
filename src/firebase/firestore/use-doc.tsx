@@ -6,7 +6,7 @@ import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
 const observer: SnapshotOptions = {
-    serverTimestamps: 'estimate',
+  serverTimestamps: 'estimate',
 };
 
 export function useDoc<T>(ref: DocumentReference<T> | null) {
@@ -22,16 +22,16 @@ export function useDoc<T>(ref: DocumentReference<T> | null) {
 
     setIsLoading(true);
     const unsubscribe = onSnapshot(
-      ref,
+      ref as any,
       observer,
-      (snapshot) => {
+      (snapshot: any) => {
         setData(snapshot.exists() ? (snapshot.data() as T) : null);
         setIsLoading(false);
       },
       (error: FirestoreError) => {
         setIsLoading(false);
         const permissionError = new FirestorePermissionError({
-          path: ref.path,
+          path: ref?.path || '',
           operation: 'get',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -46,6 +46,6 @@ export function useDoc<T>(ref: DocumentReference<T> | null) {
 }
 
 export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList) {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    return useMemo(factory, deps);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(factory, deps);
 }

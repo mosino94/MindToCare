@@ -110,9 +110,10 @@ function JournalPopoverContent({
     const q = useMemoFirebase(() => {
         if (user && db) {
             return query(
-                collection(db, 'users', user.uid, 'journals'),
+                collection(db, 'users', (user as any).uid, 'journals'),
+                where('status', '==', 'active'),
                 orderBy('createdAt', 'desc')
-            );
+            ) as any;
         }
         return null;
     }, [user, db]);

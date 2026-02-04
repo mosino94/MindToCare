@@ -36,7 +36,7 @@ export default function JournalListPage() {
   const q = useMemoFirebase(() => {
     if (user && db) {
       return query(
-        collection(db, 'users', user.uid, 'journals'),
+        collection(db, 'users', user?.uid || '', 'journals'),
         where('status', '==', 'active'),
         orderBy('createdAt', 'desc')
       );

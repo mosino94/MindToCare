@@ -201,19 +201,19 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
                     <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-2" onMouseDown={(e) => e.preventDefault()}><Pilcrow /><span className="sr-only">Text Style</span></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleBold().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleBold().run()}>
                         <Bold className="mr-2 h-4 w-4" />
                         <span>Bold</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleItalic().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleItalic().run()}>
                         <Italic className="mr-2 h-4 w-4" />
                         <span>Italic</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleUnderline().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleUnderline().run()}>
                         <Underline className="mr-2 h-4 w-4" />
                         <span>Underline</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().setHorizontalRule().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().setHorizontalRule().run()}>
                         <Minus className="mr-2 h-4 w-4" />
                         <span>Horizontal Rule</span>
                     </DropdownMenuItem>
@@ -226,15 +226,15 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
                     <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-2" onMouseDown={(e) => e.preventDefault()}><Baseline /><span className="sr-only">Scripts</span></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleStrike().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleStrike().run()}>
                         <Strikethrough className="mr-2 h-4 w-4" />
                         <span>Strikethrough</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleSuperscript().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleSuperscript().run()}>
                         <SuperscriptIcon className="mr-2 h-4 w-4" />
                         <span>Superscript</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleSubscript().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleSubscript().run()}>
                         <SubscriptIcon className="mr-2 h-4 w-4" />
                         <span>Subscript</span>
                     </DropdownMenuItem>
@@ -247,11 +247,11 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
                     <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-2" onMouseDown={(e) => e.preventDefault()}><LayoutList /><span className="sr-only">Layout</span></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleBulletList().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleBulletList().run()}>
                         <List className="mr-2 h-4 w-4" />
                         <span>Unordered List</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem type="button" onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleOrderedList().run()}>
+                    <DropdownMenuItem onMouseDown={(e) => e.preventDefault()} onSelect={() => editor.chain().focus().toggleOrderedList().run()}>
                         <ListOrdered className="mr-2 h-4 w-4" />
                         <span>Ordered List</span>
                     </DropdownMenuItem>
@@ -309,7 +309,7 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                blockquote: true,
+                blockquote: {},
                 horizontalRule: false,
                 link: false, // Disable starter kit's link
                 orderedList: {
