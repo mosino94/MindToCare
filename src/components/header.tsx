@@ -75,31 +75,32 @@ function ViewJournalDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className={cn(
-                "flex flex-col p-0 transition-all duration-300",
+                "flex flex-col p-0 transition-all duration-300 overflow-hidden",
                 isFullscreen 
                     ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100]" 
                     : "sm:max-w-2xl max-h-[90vh] rounded-lg"
             )}>
-                <DialogHeader className="p-6 pb-2 shrink-0 border-b">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                            <DialogTitle className="text-xl md:text-2xl font-bold break-words whitespace-normal leading-tight text-left">
-                                {journal.title}
-                            </DialogTitle>
-                            <DialogDescription className="mt-1">
-                                {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}
-                            </DialogDescription>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            {journal.mood && <span className="text-2xl" title={journal.mood}>{moodEmojis[journal.mood]}</span>}
+                <DialogHeader className="p-6 pb-2 shrink-0 border-b relative">
+                    <div className="flex items-start gap-4">
+                        <div className="flex items-center gap-2 flex-shrink-0 pt-1">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8" 
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground" 
                                 onClick={() => setIsFullscreen(!isFullscreen)}
+                                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                             >
                                 {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                             </Button>
+                        </div>
+                        <div className="flex-1 min-w-0 pr-8">
+                            <DialogTitle className="text-xl md:text-2xl font-bold break-words whitespace-normal leading-tight text-left">
+                                {journal.title}
+                            </DialogTitle>
+                            <DialogDescription className="mt-1 flex items-center gap-2">
+                                {journal.mood && <span className="text-lg" title={journal.mood}>{moodEmojis[journal.mood]}</span>}
+                                <span>{journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}</span>
+                            </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
@@ -242,13 +243,13 @@ function JournalPopoverContent({
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2">
-                                                            <p className="font-semibold line-clamp-1 flex-1 break-words whitespace-normal">{journal.title}</p>
+                                                            <p className="font-semibold line-clamp-1 flex-1 break-words whitespace-normal text-left">{journal.title}</p>
                                                             {journal.mood && <span title={journal.mood}>{moodEmojis[journal.mood]}</span>}
                                                         </div>
-                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                        <p className="text-xs text-muted-foreground mt-1 text-left">
                                                             {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy')}
                                                         </p>
-                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1 break-all whitespace-normal">
+                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1 break-all whitespace-normal text-left">
                                                             {createSnippet(journal.content)}
                                                         </p>
                                                     </div>
