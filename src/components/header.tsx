@@ -34,11 +34,9 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { NewJournalDialog } from '@/components/new-journal-dialog';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
-import { Skeleton } from './ui/skeleton';
-
 
 const moodEmojis: { [key: string]: string } = {
     Happy: '😄',
@@ -74,9 +72,11 @@ function ViewJournalDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center justify-between pr-8">
-                        <span>{journal.title}</span>
-                        {journal.mood && <span className="text-2xl">{moodEmojis[journal.mood]}</span>}
+                    <DialogTitle className="flex items-start justify-between pr-8 gap-4">
+                        <span className="break-words whitespace-normal leading-tight text-left flex-1 min-w-0">
+                            {journal.title}
+                        </span>
+                        {journal.mood && <span className="text-2xl flex-shrink-0">{moodEmojis[journal.mood]}</span>}
                     </DialogTitle>
                     <DialogDescription>
                         {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}
@@ -84,7 +84,7 @@ function ViewJournalDialog({
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto">
                     <div
-                        className="prose dark:prose-invert max-w-none p-4"
+                        className="prose dark:prose-invert max-w-none p-4 break-words whitespace-normal"
                         dangerouslySetInnerHTML={{ __html: journal.content || '' }}
                     />
                 </div>
@@ -124,18 +124,15 @@ function JournalPopoverContent({
 
     const filteredJournals = useMemo(() => {
         if (!journals) return [];
-        if (!searchTerm.trim()) return journals;
+        const activeJournals = journals.filter(j => j.status !== 'deleted');
+        if (!searchTerm.trim()) return activeJournals;
 
         const term = searchTerm.toLowerCase();
-        return journals.filter(journal =>
+        return activeJournals.filter(journal =>
             journal.title?.toLowerCase().includes(term) ||
             journal.content?.toLowerCase().includes(term)
         );
     }, [journals, searchTerm]);
-
-    useEffect(() => {
-        // Silent success
-    }, [journals, isLoading]);
 
     const handleEdit = (journal: any, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -187,8 +184,13 @@ function JournalPopoverContent({
             <Card className="border-none shadow-none">
                 <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
                     <CardTitle className="text-lg font-headline">My Journal</CardTitle>
-                    <Button variant="destructive" size="icon" className="h-7 w-7" onClick={handleNew}>
-                        <Plus className="h-4 w-4" />
+                    <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-full shadow-lg hover:scale-105 transition-transform" 
+                        onClick={handleNew}
+                    >
+                        <Plus className="h-5 w-5" />
                         <span className="sr-only">New Journal Entry</span>
                     </Button>
                 </CardHeader>
@@ -229,13 +231,13 @@ function JournalPopoverContent({
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2">
-                                                            <p className="font-semibold line-clamp-1 flex-1">{journal.title}</p>
+                                                            <p className="font-semibold line-clamp-1 flex-1 break-words whitespace-normal">{journal.title}</p>
                                                             {journal.mood && <span title={journal.mood}>{moodEmojis[journal.mood]}</span>}
                                                         </div>
                                                         <p className="text-xs text-muted-foreground mt-1">
-                                                            {format(journal.createdAt.toDate(), 'd MMMM yyyy')}
+                                                            {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy')}
                                                         </p>
-                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1 break-all whitespace-normal">
                                                             {createSnippet(journal.content)}
                                                         </p>
                                                     </div>
@@ -287,7 +289,6 @@ function JournalPopoverContent({
 
 type ManualStatus = 'available' | 'busy' | 'offline';
 type RealtimeStatus = 'online' | 'busy' | 'offline';
-
 
 const reportCategories = ["Bug / Glitch", "User Harassment", "Billing Issue", "Feature Request", "General Feedback", "Other"];
 
@@ -410,7 +411,6 @@ export function Header() {
         await update(ref(database), updates);
     };
 
-    // Effect to get the manually set status for the listener (for the radio buttons)
     useEffect(() => {
         if (user && role === 'listener') {
             const manualStatusRef = ref(database, `users/${user.uid}/status`);
@@ -421,7 +421,6 @@ export function Header() {
         }
     }, [user, role]);
 
-    // Effect to get the actual, real-time status (for the dot indicator)
     useEffect(() => {
         if (user && identity) {
             const realTimeStatusRef = ref(database, `status/${identity}`);
@@ -434,7 +433,6 @@ export function Header() {
 
     useEffect(() => {
         if (!user || !identity) {
-            // Cleanup when user logs out or identity is not available
             activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
             activeChatUnreadListenersRef.current.clear();
             setUnreadCounts({});
@@ -442,13 +440,11 @@ export function Header() {
             return;
         }
 
-        // Main listener for the list of chats belonging to the current user identity
         const userChatsRef = ref(database, `user_chats/${identity}`);
         const userChatsListener = onValue(userChatsRef, (snapshot) => {
             const newChatIds = new Set<string>(snapshot.exists() ? Object.keys(snapshot.val()) : []);
             const currentListeners = activeChatUnreadListenersRef.current;
 
-            // Clean up listeners for chats that have been removed
             currentListeners.forEach((cleanup, existingChatId) => {
                 if (!newChatIds.has(existingChatId)) {
                     cleanup();
@@ -468,7 +464,6 @@ export function Header() {
                 return changed ? newCounts : prev;
             });
 
-            // Add listeners for new chats
             newChatIds.forEach(chatId => {
                 if (currentListeners.has(chatId)) return;
 
@@ -485,7 +480,6 @@ export function Header() {
             });
         });
 
-        // Notifications listener (now role-specific)
         const notificationsRef = ref(database, `notifications/${identity}`);
         const notificationsListener = onValue(notificationsRef, (snapshot) => {
             const loaded: any[] = [];
@@ -499,7 +493,6 @@ export function Header() {
             setNotifications(loaded.sort((a, b) => b.createdAt - a.createdAt));
         });
 
-        // Cleanup function for the entire effect when user/identity changes or component unmounts
         return () => {
             off(userChatsRef, 'value', userChatsListener);
             activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
@@ -516,7 +509,6 @@ export function Header() {
     const handleSignOut = async () => {
         sessionStorage.removeItem('adminAuthenticated');
         sessionStorage.removeItem('roleSelectedThisSession');
-        // PresenceManager will handle setting status to offline on logout
         await signOut(auth);
         router.push('/login');
     };
@@ -590,7 +582,6 @@ export function Header() {
                     </nav>
 
                     <div className="flex items-center justify-end space-x-1 ml-auto">
-                        {/* Journal Icon - Only for members, show solid icon while loading */}
                         {(loading || role === 'member') ? (
                             <Popover open={isJournalPopoverOpen} onOpenChange={setIsJournalPopoverOpen}>
                                 <PopoverTrigger asChild>
@@ -610,10 +601,8 @@ export function Header() {
                             </Popover>
                         ) : null}
 
-                        {/* Theme Toggle - Always visible */}
                         <ThemeToggle />
 
-                        {/* Desktop actions: Notifications and User Profile */}
                         <div className="hidden md:flex items-center space-x-1">
                             <Popover onOpenChange={(open) => { if (!open) { handleMarkNotificationsAsRead(); } }}>
                                 <PopoverTrigger asChild>

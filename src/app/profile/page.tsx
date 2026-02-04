@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { database, storage } from '@/lib/firebase';
-import { ref as dbRef, update, get, remove, set, query, orderByChild, equalTo, onValue } from 'firebase/database';
+import { ref as dbRef, update, get, set } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -233,13 +231,11 @@ export default function ProfilePage() {
       
       const updates: { [key: string]: any } = {};
 
-      // Shared Profile Data
       updates[`/users/${user.uid}/sharedProfile`] = {
         ...userData.sharedProfile,
         age, gender, country, languages, religion,
       };
 
-      // Role-Specific Data
       const roleSpecificUpdates: any = { bio, photoURL, screenName };
       if (isListener) {
         roleSpecificUpdates.livedExperience = livedExperience;
@@ -250,17 +246,14 @@ export default function ProfilePage() {
         ...roleSpecificUpdates
       };
       
-      // Screen Name Uniqueness and History
       const newScreenNameLower = screenName.toLowerCase();
       if (newScreenNameLower !== originalScreenName) {
         const otherRole = role === 'listener' ? 'member' : 'listener';
         const otherRoleScreenNameLower = userData.roles?.[otherRole]?.screenName?.toLowerCase();
 
-        // Release the old name only if it's not being used by the other role.
         if (originalScreenName && originalScreenName !== otherRoleScreenNameLower) {
-            updates[`/users_screenames/${originalScreenName}`] = null; // Release old name
+            updates[`/users_screenames/${originalScreenName}`] = null;
         }
-        // Claim the new name
         updates[`/users_screenames/${newScreenNameLower}`] = user.uid;
       }
 
@@ -312,13 +305,11 @@ export default function ProfilePage() {
       )
     }
 
-  const formLabel = (label: string, required: boolean) => {
-      return (
-          <>
-            {label} {!required && <span className="text-muted-foreground text-xs">(Optional)</span>}
-          </>
-      )
-  }
+  const formLabel = (label: string, required: boolean) => (
+    <>
+      {label} {!required && <span className="text-muted-foreground text-xs">(Optional)</span>}
+    </>
+  );
 
   return (
     <div className="container mx-auto p-4 md:p-8 max-w-2xl">
@@ -588,14 +579,14 @@ export default function ProfilePage() {
                                 >
                                 <div className="flex gap-1 flex-wrap">
                                     {field.value && field.value.length > 0 ? (
-                                    field.value.map((language) => (
+                                    field.value.map((language: string) => (
                                         <Badge
                                         variant="secondary"
                                         key={language}
                                         className="mr-1 mb-1"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const newLangs = field.value.filter(l => l !== language);
+                                          const newLangs = field.value.filter((l: string) => l !== language);
                                           form.setValue("languages", newLangs);
                                         }}
                                         >

@@ -1,14 +1,12 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { database, storage } from '@/lib/firebase';
-import { ref as dbRef, update, get, set, query, orderByChild, equalTo, remove } from 'firebase/database';
+import { ref as dbRef, update, get } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -33,7 +31,7 @@ import { debounce } from 'lodash';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { defaultAvatars } from '@/lib/avatars';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -88,8 +86,8 @@ export default function CompleteProfilePage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  const [religionOpen, setReligionOpen] = useState(false)
-  const [languageOpen, setLanguageOpen] = useState(false)
+  const [religionOpen, setReligionOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'taken' | 'idle'>('idle');
   const [usernameSuggestion, setUsernameSuggestion] = useState<string | null>(null);
   
@@ -117,65 +115,7 @@ export default function CompleteProfilePage() {
     },
   });
 
-  useEffect(() => {
-    // When this page loads, we're officially out of the training flow,
-    // so we can safely clean up the progress key.
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem(TRAINING_PROGRESS_KEY);
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount
-  
-  // Effect to pre-populate form with existing user data
-  useEffect(() => {
-    if (user) {
-      setPageLoading(true);
-      const userRef = dbRef(database, `users/${user.uid}`);
-      get(userRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const currentRoleProfile = data.roles?.[role] || {};
-          const sharedProfile = data.sharedProfile || {};
-          
-          const defaultValues: Partial<ProfileFormValues> = {
-            screenName: currentRoleProfile.screenName || data.name?.split(' ')[0].substring(0, 18) || '',
-            bio: currentRoleProfile.bio || '',
-            age: sharedProfile.age || '',
-            gender: sharedProfile.gender || '',
-            religion: sharedProfile.religion || '',
-            country: sharedProfile.country || '',
-            languages: sharedProfile.languages || [],
-            livedExperience: currentRoleProfile.livedExperience || [],
-            noDiscuss: currentRoleProfile.noDiscuss || [],
-            selectedAvatar: currentRoleProfile.photoURL && defaultAvatars.some((a: any) => a.url === currentRoleProfile.photoURL) ? currentRoleProfile.photoURL : '',
-          };
-          form.reset(defaultValues);
-          
-          const initialPhoto = currentRoleProfile.photoURL || authPhotoURL;
-          if (initialPhoto) {
-            setImagePreview(initialPhoto);
-            if (defaultAvatars.some(a => a.url === initialPhoto)) {
-              form.setValue('selectedAvatar', initialPhoto);
-            }
-          }
-          
-          if (defaultValues.screenName && defaultValues.screenName.length >= 3) {
-            checkUsername(defaultValues.screenName);
-          }
-        }
-      }).finally(() => {
-        setPageLoading(false);
-      });
-    }
-  }, [user, name, authPhotoURL, form, role]);
-
-
-  useEffect(() => {
-    // For members, show the guidelines dialog on first load of this page.
-    if (role === 'member') {
-      setIsGuidelinesOpen(true);
-    }
-  }, [role]);
-
+  // Define checkUsername first to avoid ReferenceError
   const checkUsername = useCallback(debounce(async (screenName: string) => {
     if (!user || screenName.length < 3) {
       setUsernameStatus('idle');
@@ -218,7 +158,60 @@ export default function CompleteProfilePage() {
       setUsernameStatus('idle');
     }
   }, 500), [user, form, toast]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(TRAINING_PROGRESS_KEY);
+    }
+  }, []);
   
+  useEffect(() => {
+    if (user) {
+      setPageLoading(true);
+      const userRef = dbRef(database, `users/${user.uid}`);
+      get(userRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const currentRoleProfile = data.roles?.[role] || {};
+          const sharedProfile = data.sharedProfile || {};
+          
+          const defaultValues: Partial<ProfileFormValues> = {
+            screenName: currentRoleProfile.screenName || data.name?.split(' ')[0].substring(0, 18) || '',
+            bio: currentRoleProfile.bio || '',
+            age: sharedProfile.age || '',
+            gender: sharedProfile.gender || '',
+            religion: sharedProfile.religion || '',
+            country: sharedProfile.country || '',
+            languages: sharedProfile.languages || [],
+            livedExperience: currentRoleProfile.livedExperience || [],
+            noDiscuss: currentRoleProfile.noDiscuss || [],
+            selectedAvatar: currentRoleProfile.photoURL && defaultAvatars.some((a: any) => a.url === currentRoleProfile.photoURL) ? currentRoleProfile.photoURL : '',
+          };
+          form.reset(defaultValues);
+          
+          const initialPhoto = currentRoleProfile.photoURL || authPhotoURL;
+          if (initialPhoto) {
+            setImagePreview(initialPhoto);
+            if (defaultAvatars.some(a => a.url === initialPhoto)) {
+              form.setValue('selectedAvatar', initialPhoto);
+            }
+          }
+          
+          if (defaultValues.screenName && defaultValues.screenName.length >= 3) {
+            checkUsername(defaultValues.screenName);
+          }
+        }
+      }).finally(() => {
+        setPageLoading(false);
+      });
+    }
+  }, [user, name, authPhotoURL, form, role, checkUsername]);
+
+  useEffect(() => {
+    if (role === 'member') {
+      setIsGuidelinesOpen(true);
+    }
+  }, [role]);
 
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -228,7 +221,6 @@ export default function CompleteProfilePage() {
     });
     return () => subscription.unsubscribe();
   }, [form, checkUsername]);
-
 
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user) return;
@@ -263,13 +255,11 @@ export default function CompleteProfilePage() {
       
       const updates: { [key: string]: any } = {};
 
-      // Shared Profile Data
       updates[`/users/${user.uid}/sharedProfile`] = {
         ...existingUserData.sharedProfile,
         age, gender, country, languages, religion,
       };
 
-      // Role-Specific Data
       const roleSpecificUpdates: any = { bio, photoURL, screenName, profileCompleted: true };
       if (isListener) {
         roleSpecificUpdates.livedExperience = livedExperience;
@@ -280,9 +270,7 @@ export default function CompleteProfilePage() {
         ...roleSpecificUpdates
       };
 
-      // Screen Name Uniqueness
       const newScreenNameLower = screenName.toLowerCase();
-      // The DB rule `(!data.exists() || data.val() === auth.uid)` handles if the user is reusing their own name from the other role.
       updates[`/users_screenames/${newScreenNameLower}`] = user.uid;
       
       await update(dbRef(database), updates);
@@ -306,13 +294,11 @@ export default function CompleteProfilePage() {
     }
   };
 
-  const formLabel = (label: string, required: boolean) => {
-      return (
-          <>
-            {label} {!required && <span className="text-muted-foreground text-xs">(Optional)</span>}
-          </>
-      )
-  }
+  const formLabel = (label: string, required: boolean) => (
+    <>
+      {label} {!required && <span className="text-muted-foreground text-xs">(Optional)</span>}
+    </>
+  );
 
   if (pageLoading) {
     return (
@@ -335,7 +321,7 @@ export default function CompleteProfilePage() {
               </CardContent>
            </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -648,14 +634,14 @@ export default function CompleteProfilePage() {
                                 >
                                 <div className="flex gap-1 flex-wrap">
                                     {field.value && field.value.length > 0 ? (
-                                    field.value.map((language) => (
+                                    field.value.map((language: string) => (
                                         <Badge
                                         variant="secondary"
                                         key={language}
                                         className="mr-1 mb-1"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const newLangs = field.value.filter(l => l !== language);
+                                          const newLangs = field.value.filter((l: string) => l !== language);
                                           form.setValue("languages", newLangs);
                                         }}
                                         >

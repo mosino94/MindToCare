@@ -1,12 +1,10 @@
-
 'use client';
 
 import { Home, MessageCircle, User, HeartHandshake, Bell, LogOut, Settings, Shield, Repeat, AlertTriangle, Search } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
-import { useContext, useState, useEffect, useMemo, useRef } from 'react';
+import { useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MemberPageContext } from '@/context/member-page-context';
 import { ListenerRequestNotifier } from './listener-request-notifier';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -137,6 +135,14 @@ export function BottomNavBar() {
 
   const activeChatUnreadListenersRef = useRef(new Map<string, () => void>());
 
+  // Move function and nav items definitions above their first usage
+  const getHomePath = useCallback(() => (role === 'listener' ? '/listener' : '/member'), [role]);
+
+  const navItems = useMemo(() => [
+    { href: getHomePath(), icon: Home, label: 'Home' },
+    { href: '/chats', icon: MessageCircle, label: 'Chats' },
+  ], [getHomePath]);
+
   const unreadChatCount = useMemo(() => {
     return Object.values(unreadCounts).filter(count => count > 0).length;
   }, [unreadCounts]);
@@ -150,7 +156,6 @@ export function BottomNavBar() {
     await update(ref(database), updates);
   };
 
-  // Effect to get the manually set status for the listener (for the radio buttons)
   useEffect(() => {
     if (user && role === 'listener') {
       const manualStatusRef = ref(database, `users/${user.uid}/status`);
@@ -161,7 +166,6 @@ export function BottomNavBar() {
     }
   }, [user, role]);
 
-  // Effect to get the actual, real-time status for the dot indicator
   useEffect(() => {
     if (user && identity) {
       const realTimeStatusRef = ref(database, `status/${identity}`);
@@ -174,7 +178,6 @@ export function BottomNavBar() {
 
   useEffect(() => {
     if (!user || !identity) {
-      // Cleanup when user logs out or identity is not available
       activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
       activeChatUnreadListenersRef.current.clear();
       setUnreadCounts({});
@@ -182,13 +185,11 @@ export function BottomNavBar() {
       return;
     }
 
-    // Main listener for the list of chats belonging to the current user identity
     const userChatsRef = ref(database, `user_chats/${identity}`);
     const userChatsListener = onValue(userChatsRef, (snapshot) => {
       const newChatIds = new Set<string>(snapshot.exists() ? Object.keys(snapshot.val()) : []);
       const currentListeners = activeChatUnreadListenersRef.current;
 
-      // Clean up listeners for chats that have been removed
       currentListeners.forEach((cleanup, existingChatId) => {
         if (!newChatIds.has(existingChatId)) {
           cleanup();
@@ -207,7 +208,6 @@ export function BottomNavBar() {
         return changed ? newCounts : prev;
       });
 
-      // Add listeners for new chats
       newChatIds.forEach(chatId => {
         if (currentListeners.has(chatId)) return;
 
@@ -224,7 +224,6 @@ export function BottomNavBar() {
       });
     });
 
-    // Notifications listener (now role-specific)
     const notificationsRef = ref(database, `notifications/${identity}`);
     const notificationsListener = onValue(notificationsRef, (snapshot) => {
       const loaded: any[] = [];
@@ -238,7 +237,6 @@ export function BottomNavBar() {
       setNotifications(loaded.sort((a, b) => b.createdAt - a.createdAt));
     });
 
-    // Cleanup function for the entire effect when user/identity changes or component unmounts
     return () => {
       off(userChatsRef, 'value', userChatsListener);
       activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
@@ -254,13 +252,6 @@ export function BottomNavBar() {
     set(statusRef, newStatus);
     setManualStatus(newStatus);
   };
-
-  const getHomePath = () => (role === 'listener' ? '/listener' : '/member');
-
-  const navItems = [
-    { href: getHomePath(), icon: Home, label: 'Home' },
-    { href: '/chats', icon: MessageCircle, label: 'Chats', badgeCount: unreadChatCount },
-  ];
 
   const handleSignOut = async () => {
     sessionStorage.removeItem('adminAuthenticated');
@@ -288,7 +279,6 @@ export function BottomNavBar() {
     if (href === '/chats') {
       return pathname.startsWith('/chats') || pathname.startsWith('/chat/');
     }
-    // For other paths like /profile or /settings, we don't want any nav item to be active.
     return false;
   };
 
@@ -297,10 +287,14 @@ export function BottomNavBar() {
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 h-16 w-[calc(100%-1rem)] max-w-sm bg-background border shadow-lg rounded-2xl md:hidden z-40">
         <div className="grid h-full grid-cols-5 items-stretch">
           {navItems.map((item) => (
-            <NavItem key={item.href} {...item} isActive={isItemActive(item.href)} />
+            <NavItem 
+              key={item.href} 
+              {...item} 
+              isActive={isItemActive(item.href)} 
+              badgeCount={item.href === '/chats' ? unreadChatCount : undefined} 
+            />
           ))}
 
-          {/* Center Action Button */}
           <div className="flex items-center justify-center">
             <div className="flex-shrink-0 -translate-y-4">
               {loading ? (
@@ -332,7 +326,6 @@ export function BottomNavBar() {
             </div>
           </div>
 
-          {/* Notifications Popover */}
           <Popover onOpenChange={(open) => { if (!open) { handleMarkNotificationsAsRead(); } }}>
             <PopoverTrigger asChild>
               <button className="group flex h-full flex-col items-center justify-center text-muted-foreground transition-colors hover:text-primary">
@@ -375,7 +368,6 @@ export function BottomNavBar() {
             </PopoverContent>
           </Popover>
 
-          {/* Profile Popover */}
           <Popover>
             <PopoverTrigger asChild>
               <button className='group flex h-full flex-col items-center justify-center text-muted-foreground transition-colors hover:text-primary'>
