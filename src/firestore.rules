@@ -102,7 +102,8 @@ service cloud.firestore {
 
     /* -------- User Journals (NEW) -------- */
     match /users/{uid}/journals/{journalId} {
-      allow read, write: if isAuth() && request.auth.uid == uid;
+      allow get, list: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }

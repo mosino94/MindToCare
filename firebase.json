@@ -4,5 +4,8 @@
       "backendId": "studio",
       "sourceDir": "."
     }
-  ]
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  }
 }
