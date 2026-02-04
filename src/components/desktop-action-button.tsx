@@ -47,5 +47,21 @@ export function DesktopActionButton() {
     );
   }
 
-  return null;
+  // Fallback for members or other roles (like admin)
+  return (
+    <button
+      onClick={() => setIsRequestDialogOpen(true)}
+      className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 items-center justify-center w-16 h-16 bg-primary rounded-full text-primary-foreground shadow-lg transition-transform hover:scale-105 z-40"
+      aria-label="Find Support"
+    >
+      {pendingRequest ? (
+        <div className="relative w-8 h-8">
+          <div className="absolute inset-0 rounded-full bg-primary-foreground/20 animate-ping"></div>
+          <Search className="relative w-full h-full" />
+        </div>
+      ) : (
+        <HeartHandshake className="w-8 h-8" />
+      )}
+    </button>
+  );
 }

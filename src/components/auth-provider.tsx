@@ -11,7 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // User Data State
   const [role, setRole] = useState<UserRole>('member');
   const [identity, setIdentity] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (snapshot.exists()) {
           const userData = snapshot.val();
           const activeRole = userData?.role || 'member';
-          
+
           const currentRoleProfile = userData.roles?.[activeRole] || {};
           const listenerRoleProfile = userData.roles?.listener || {};
           const memberRoleProfile = userData.roles?.member || {};
@@ -52,21 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRole(activeRole);
           setIdentity(`${user.uid}_${activeRole}`);
           setName(userData?.name || null);
-          
+
           // Set role-specific data
           setScreenName(currentRoleProfile.screenName || null);
           setBio(currentRoleProfile.bio || null);
           setPhotoURL(currentRoleProfile.photoURL || null);
-          
+
           // Set profile completion status
           setProfileCompleted(currentRoleProfile.profileCompleted || false);
           setHasCompletedListenerProfile(listenerRoleProfile.profileCompleted || false);
           setMemberProfileCompleted(memberRoleProfile.profileCompleted || false);
 
-        } else {
-            // This might be a freshly created user who doesn't have a DB entry yet.
-            // The login/signup pages will create the entry.
         }
+        // Always set loading to false once we've attempted to fetch the data
         setLoading(false);
       }, (error) => {
         console.error("Error fetching user data from RTDB:", error);
@@ -91,12 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Main navigation/routing effect
   useEffect(() => {
     if (loading) {
-      return; 
+      return;
     }
 
     const unauthenticatedPaths = ['/login', '/listener/training'];
     const isUnauthenticatedPath = unauthenticatedPaths.some(p => pathname.startsWith(p));
-    
+
     // Ignore routing logic for special pages like admin
     if (pathname.startsWith('/admin')) {
       return;
@@ -112,42 +110,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return;
     }
-    
+
     // --- Handle authenticated users ---
-    
+
     // 1. Profile completion check
     if (!profileCompleted && pathname !== '/profile/complete' && !isUnauthenticatedPath) {
-        router.push('/profile/complete');
-        return;
+      router.push('/profile/complete');
+      return;
     }
-    
+
     const memberHome = '/member';
     const listenerHome = '/listener';
 
     // 2. Routing for users with completed profiles
     if (profileCompleted) {
-        // Redirect away from completion page if profile is already complete
-        if (pathname === '/profile/complete') {
-            router.push(role === 'listener' ? listenerHome : memberHome);
-            return;
-        }
+      // Redirect away from completion page if profile is already complete
+      if (pathname === '/profile/complete') {
+        router.push(role === 'listener' ? listenerHome : memberHome);
+        return;
+      }
 
-        const isAtRoot = pathname === '/';
-        const isAtMemberHome = pathname.startsWith(memberHome);
-        const isAtListenerHome = pathname.startsWith(listenerHome);
+      const isAtRoot = pathname === '/';
+      const isAtMemberHome = pathname.startsWith(memberHome);
+      const isAtListenerHome = pathname.startsWith(listenerHome);
 
-        // Redirect from root to role-specific home
-        if (isAtRoot) {
-            router.push(role === 'listener' ? listenerHome : memberHome);
-            return;
-        }
-        
-        // Prevent role mismatch access to home pages
-        if (role === 'listener' && isAtMemberHome) {
-            router.push(listenerHome);
-        } else if (role === 'member' && isAtListenerHome && pathname !== '/listener/training') {
-            router.push(memberHome);
-        }
+      // Redirect from root to role-specific home
+      if (isAtRoot) {
+        router.push(role === 'listener' ? listenerHome : memberHome);
+        return;
+      }
+
+      // Prevent role mismatch access to home pages
+      if (role === 'listener' && isAtMemberHome) {
+        router.push(listenerHome);
+      } else if (role === 'member' && isAtListenerHome && pathname !== '/listener/training') {
+        router.push(memberHome);
+      }
     }
 
   }, [user, role, profileCompleted, loading, router, pathname]);

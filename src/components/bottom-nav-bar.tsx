@@ -305,7 +305,11 @@ export function BottomNavBar() {
             <div className="flex-shrink-0 -translate-y-4">
               {loading ? (
                 <div className="w-16 h-16 bg-muted rounded-full shadow-lg" />
-              ) : role === 'member' ? (
+              ) : role === 'listener' ? (
+                <div className="relative">
+                  <ListenerRequestNotifier isBottomNav={true} />
+                </div>
+              ) : (
                 <button
                   onClick={() => setIsRequestDialogOpen(true)}
                   className="flex items-center justify-center w-16 h-16 bg-primary rounded-full text-primary-foreground shadow-lg transition-transform hover:scale-105"
@@ -319,10 +323,6 @@ export function BottomNavBar() {
                     <HeartHandshake className="w-8 h-8" />
                   )}
                 </button>
-              ) : (
-                <div className="relative">
-                  <ListenerRequestNotifier isBottomNav={true} />
-                </div>
               )}
             </div>
           </div>
