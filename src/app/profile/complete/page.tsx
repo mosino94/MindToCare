@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { database, storage } from '@/lib/firebase';
-import { ref as dbRef, update, get } from 'firebase/database';
+import { dbRef, update, get } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ref } from 'firebase/database';
 
 const TRAINING_PROGRESS_KEY = 'listenerTrainingProgress';
 
@@ -82,15 +83,14 @@ export default function CompleteProfilePage() {
   const { user, role, name, photoURL: authPhotoURL } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
   const [religionOpen, setReligionOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'taken' | 'idle'>('idle');
   const [usernameSuggestion, setUsernameSuggestion] = useState<string | null>(null);
-  
   const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
   const [guidelinesAgreed, setGuidelinesAgreed] = useState(false);
   
@@ -128,7 +128,7 @@ export default function CompleteProfilePage() {
 
     try {
       const screenNameLower = screenName.toLowerCase();
-      const screenNameRef = dbRef(database, `users_screenames/${screenNameLower}`);
+      const screenNameRef = ref(database, `users_screenames/${screenNameLower}`);
       const snapshot = await get(screenNameRef);
 
       if (snapshot.exists() && snapshot.val() !== user.uid) {
@@ -159,7 +159,7 @@ export default function CompleteProfilePage() {
   useEffect(() => {
     if (user) {
       setPageLoading(true);
-      const userRef = dbRef(database, `users/${user.uid}`);
+      const userRef = ref(database, `users/${user.uid}`);
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
@@ -228,7 +228,7 @@ export default function CompleteProfilePage() {
     setLoading(true);
 
     try {
-      const userRef = dbRef(database, `users/${user.uid}`);
+      const userRef = ref(database, `users/${user.uid}`);
       const userSnapshot = await get(userRef);
       const existingUserData = userSnapshot.val() || {};
 
@@ -264,7 +264,7 @@ export default function CompleteProfilePage() {
       const newScreenNameLower = screenName.toLowerCase();
       updates[`/users_screenames/${newScreenNameLower}`] = user.uid;
       
-      await update(dbRef(database), updates);
+      await update(ref(database), updates);
       
       toast({
         title: "Profile Complete!",

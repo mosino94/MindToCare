@@ -51,7 +51,7 @@ const moodEmojis: { [key: string]: string } = {
 const createSnippet = (html: string, length = 50) => {
     if (!html) return '';
     const text = html.replace(/<[^>]+>/g, '');
-    if (text.length <= length) return text;
+    if (text.length <= length) text;
     return text.substring(0, length) + '...';
 };
 
@@ -77,7 +77,7 @@ function ViewJournalDialog({
             <DialogContent className={cn(
                 "flex flex-col p-0 transition-all duration-300 overflow-hidden",
                 isFullscreen 
-                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100]" 
+                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100] translate-x-0 translate-y-0 left-0 top-0 transform-none" 
                     : "sm:max-w-2xl max-h-[90vh] rounded-lg"
             )}>
                 <DialogHeader className="p-6 pb-2 shrink-0 border-b relative">
@@ -94,10 +94,10 @@ function ViewJournalDialog({
                             </Button>
                         </div>
                         <div className="flex-1 min-w-0 pr-8">
-                            <DialogTitle className="text-xl md:text-2xl font-bold break-words whitespace-normal leading-tight text-left">
+                            <DialogTitle className="text-xl md:text-2xl font-bold break-all whitespace-normal leading-tight text-left">
                                 {journal.title}
                             </DialogTitle>
-                            <DialogDescription className="mt-1 flex items-center gap-2">
+                            <DialogDescription className="mt-1 flex items-center gap-2 text-left">
                                 {journal.mood && <span className="text-lg" title={journal.mood}>{moodEmojis[journal.mood]}</span>}
                                 <span>{journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}</span>
                             </DialogDescription>
@@ -106,7 +106,7 @@ function ViewJournalDialog({
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
                     <div
-                        className="prose dark:prose-invert max-w-none break-words whitespace-normal"
+                        className="prose dark:prose-invert max-w-none break-words whitespace-normal text-left"
                         dangerouslySetInnerHTML={{ __html: journal.content || '' }}
                     />
                 </div>
@@ -337,7 +337,7 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
             });
             toast({
                 title: 'Report Submitted',
-                description: "Thank you for your feedback. We'll look into it shortly.",
+                description: "Thank you for your feedback.",
             });
             setReportText('');
             setCategory('');

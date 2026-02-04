@@ -73,15 +73,13 @@ export default function ProfilePage() {
   const { user, role } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
   const [religionOpen, setReligionOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
-  
   const [originalScreenName, setOriginalScreenName] = useState('');
-  
   const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'taken' | 'idle'>('idle');
   const [usernameSuggestion, setUsernameSuggestion] = useState<string | null>(null);
   const [customReligion, setCustomReligion] = useState('');
