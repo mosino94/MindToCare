@@ -29,7 +29,7 @@ const createSnippet = (html: string, length = 150) => {
 };
 
 export default function JournalListPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const db = useFirestore();
   const [isNewJournalOpen, setIsNewJournalOpen] = useState(false);
 
@@ -37,14 +37,15 @@ export default function JournalListPage() {
     if (user && db) {
       return query(
         collection(db, 'users', (user as any).uid, 'journals'),
-        where('status', '==', 'active'),
         orderBy('createdAt', 'desc')
       ) as any;
     }
     return null;
   }, [user, db]);
 
-  const { data: journals, isLoading } = useCollection(q);
+  const { data: journals, isLoading: collectionLoading } = useCollection(q);
+
+  const isLoading = authLoading || (user && collectionLoading);
 
   if (isLoading) {
     return (
@@ -52,6 +53,10 @@ export default function JournalListPage() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (!user) {
+    return null; // AuthProvider handles redirect
   }
 
   if (!journals || journals.length === 0) {
@@ -106,7 +111,13 @@ export default function JournalListPage() {
                   {journal.mood && (
                     <span title={journal.mood}>{moodEmojis[journal.mood]}</span>
                   )}
-                  <span>{format(journal.createdAt.toDate(), 'MMMM d, yyyy')}</span>
+                  <span>
+                    {journal.createdAt && typeof journal.createdAt.toDate === 'function'
+                      ? format(journal.createdAt.toDate(), 'MMMM d, yyyy')
+                      : journal.createdAt instanceof Date
+                        ? format(journal.createdAt, 'MMMM d, yyyy')
+                        : 'Recently'}
+                  </span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1">

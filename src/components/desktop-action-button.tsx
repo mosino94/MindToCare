@@ -16,7 +16,9 @@ export function DesktopActionButton() {
 
   if (loading) {
     return (
-      <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 items-center justify-center w-16 h-16 bg-muted rounded-full shadow-lg z-40" />
+      <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 items-center justify-center w-16 h-16 bg-primary rounded-full text-primary-foreground shadow-lg z-40">
+        <HeartHandshake className="w-8 h-8" />
+      </div>
     );
   }
 

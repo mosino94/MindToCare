@@ -304,7 +304,12 @@ export function BottomNavBar() {
           <div className="flex items-center justify-center">
             <div className="flex-shrink-0 -translate-y-4">
               {loading ? (
-                <div className="w-16 h-16 bg-muted rounded-full shadow-lg" />
+                <button
+                  disabled
+                  className="flex items-center justify-center w-16 h-16 bg-primary rounded-full text-primary-foreground shadow-lg"
+                >
+                  <HeartHandshake className="w-8 h-8" />
+                </button>
               ) : role === 'listener' ? (
                 <div className="relative">
                   <ListenerRequestNotifier isBottomNav={true} />
