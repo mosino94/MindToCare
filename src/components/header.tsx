@@ -1,3 +1,4 @@
+
 'use client';
 
 import { signOut } from 'firebase/auth';
@@ -77,7 +78,7 @@ function ViewJournalDialog({
             <DialogContent className={cn(
                 "flex flex-col p-0 transition-all duration-300 overflow-hidden",
                 isFullscreen 
-                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100] left-0 top-0 translate-x-0 translate-y-0 transform-none" 
+                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100] !left-0 !top-0 !translate-x-0 !translate-y-0 !transform-none" 
                     : "sm:max-w-2xl max-h-[90vh] rounded-lg"
             )}>
                 <DialogHeader className="p-6 pb-2 shrink-0 border-b relative flex-row items-start gap-4">
@@ -91,7 +92,7 @@ function ViewJournalDialog({
                         {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                     </Button>
                     <div className="flex-1 min-w-0 pr-8">
-                        <DialogTitle className="text-xl md:text-2xl font-bold break-all [overflow-wrap:anywhere] whitespace-normal leading-tight text-left">
+                        <DialogTitle className="text-xl md:text-2xl font-bold break-words [overflow-wrap:anywhere] leading-tight text-left">
                             {journal.title}
                         </DialogTitle>
                         <DialogDescription className="mt-1 flex items-center gap-2 text-left">
@@ -102,7 +103,7 @@ function ViewJournalDialog({
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
                     <div
-                        className="prose dark:prose-invert max-w-none break-all [overflow-wrap:anywhere] whitespace-normal text-left"
+                        className="prose dark:prose-invert max-w-none break-words [overflow-wrap:anywhere] text-left w-full"
                         dangerouslySetInnerHTML={{ __html: journal.content || '' }}
                     />
                 </div>
