@@ -310,8 +310,6 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
         extensions: [
             StarterKit.configure({
                 blockquote: {},
-                horizontalRule: false,
-                link: false, // Disable starter kit's link
                 orderedList: {
                     keepMarks: true,
                     keepAttributes: false,

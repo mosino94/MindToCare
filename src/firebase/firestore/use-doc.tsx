@@ -23,9 +23,8 @@ export function useDoc<T>(ref: DocumentReference<T> | null) {
     setIsLoading(true);
     const unsubscribe = onSnapshot(
       ref as any,
-      observer,
       (snapshot: any) => {
-        setData(snapshot.exists() ? (snapshot.data() as T) : null);
+        setData(snapshot.exists() ? (snapshot.data(observer) as T) : null);
         setIsLoading(false);
       },
       (error: FirestoreError) => {
