@@ -100,10 +100,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    /* -------- User Journals (NEW) -------- */
+    /* -------- User Journals -------- */
     match /users/{uid}/journals/{journalId} {
-      allow get, list: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      // Members can read their own journals
+      allow read: if isAuth() && (request.auth.uid == uid || identity() in resource.data.sharedWith);
+      // Only the owner can write
+      allow write: if isAuth() && request.auth.uid == uid;
     }
   }
 }
