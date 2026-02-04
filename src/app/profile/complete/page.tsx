@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { database, storage } from '@/lib/firebase';
-import { dbRef, update, get } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ref } from 'firebase/database';
+import { ref, get, update } from 'firebase/database';
 
 const TRAINING_PROGRESS_KEY = 'listenerTrainingProgress';
 
@@ -196,7 +195,7 @@ export default function CompleteProfilePage() {
         setPageLoading(false);
       });
     }
-  }, [user, name, authPhotoURL, form, role, checkUsername]);
+  }, [user, authPhotoURL, form, role, checkUsername]);
 
   useEffect(() => {
     if (role === 'member') {

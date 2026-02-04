@@ -31,12 +31,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import Link from 'next/link';
 import { NewJournalDialog } from '@/components/new-journal-dialog';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
+import Link from 'next/link';
 
 const moodEmojis: { [key: string]: string } = {
     Happy: '😄',
@@ -91,7 +91,7 @@ function ViewJournalDialog({
                         {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                     </Button>
                     <div className="flex-1 min-w-0 pr-8">
-                        <DialogTitle className="text-xl md:text-2xl font-bold break-words whitespace-normal leading-tight text-left">
+                        <DialogTitle className="text-xl md:text-2xl font-bold break-all [overflow-wrap:anywhere] whitespace-normal leading-tight text-left">
                             {journal.title}
                         </DialogTitle>
                         <DialogDescription className="mt-1 flex items-center gap-2 text-left">
@@ -102,7 +102,7 @@ function ViewJournalDialog({
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
                     <div
-                        className="prose dark:prose-invert max-w-none break-words whitespace-normal text-left"
+                        className="prose dark:prose-invert max-w-none break-all [overflow-wrap:anywhere] whitespace-normal text-left"
                         dangerouslySetInnerHTML={{ __html: journal.content || '' }}
                     />
                 </div>
