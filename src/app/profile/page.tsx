@@ -138,9 +138,6 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error('Failed to check username', error);
       let errorMessage = 'Could not verify username. Please try again.';
-       if (error.message.includes('Permission denied')) {
-          errorMessage = 'Database permission denied. Please check your Firebase security rules.';
-      }
       form.setError('screenName', { type: 'manual', message: errorMessage });
       setUsernameStatus('idle');
     }
@@ -317,7 +314,7 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Edit Your Profile</CardTitle>
           <CardDescription>
-            Keep your information up to date. Changes will apply to your current <span className='font-bold capitalize'>{role}</span> role.
+            Changes apply to your current <span className='font-bold capitalize'>{role}</span> role.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -423,7 +420,7 @@ export default function ProfilePage() {
                       <Input placeholder="Your public display name" {...field} maxLength={18} />
                     </FormControl>
                     <FormDescription>
-                        This is your public name. Your account name is private and cannot be changed. Please note, you can only change your screen name twice within one week of creating the role.
+                        This is your public name. You can only change your screen name twice within one week.
                     </FormDescription>
                      <div className="h-5">
                         {usernameStatus === 'checking' && <p className="text-sm text-muted-foreground">Checking availability...</p>}
@@ -456,7 +453,7 @@ export default function ProfilePage() {
               <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                      The following information is shared between your Member and Listener profiles.
+                      This information is shared between profiles.
                   </AlertDescription>
               </Alert>
 
@@ -722,7 +719,7 @@ export default function ProfilePage() {
                     render={() => (
                       <FormItem>
                         <div className="mb-4">
-                            <FormLabel className="text-base">Issues You Have Direct Lived Experience With (Optional)</FormLabel>
+                            <FormLabel className="text-base">Experience With (Optional)</FormLabel>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {MENTAL_HEALTH_TOPICS.map((item) => (
@@ -770,7 +767,7 @@ export default function ProfilePage() {
                     render={() => (
                       <FormItem>
                          <div className="mb-4">
-                            <FormLabel className="text-base">Issues You Don't Want to Discuss (Optional)</FormLabel>
+                            <FormLabel className="text-base">Won't Discuss (Optional)</FormLabel>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {MENTAL_HEALTH_TOPICS.map((item) => (

@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, database } from '@/lib/firebase';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2, Search, X } from 'lucide-react';
+import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2, Search, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Icons } from './icons';
 import {
     DropdownMenu,
@@ -48,7 +48,6 @@ const moodEmojis: { [key: string]: string } = {
     Grateful: '🙏',
 };
 
-// Function to strip HTML and truncate text
 const createSnippet = (html: string, length = 50) => {
     if (!html) return '';
     const text = html.replace(/<[^>]+>/g, '');
@@ -56,7 +55,6 @@ const createSnippet = (html: string, length = 50) => {
     return text.substring(0, length) + '...';
 };
 
-// View Journal Dialog Component
 function ViewJournalDialog({
     journal,
     open,
@@ -66,25 +64,48 @@ function ViewJournalDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        if (!open) setIsFullscreen(false);
+    }, [open]);
+
     if (!journal) return null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle className="flex items-start justify-between pr-8 gap-4">
-                        <span className="break-words whitespace-normal leading-tight text-left flex-1 min-w-0">
-                            {journal.title}
-                        </span>
-                        {journal.mood && <span className="text-2xl flex-shrink-0">{moodEmojis[journal.mood]}</span>}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}
-                    </DialogDescription>
+            <DialogContent className={cn(
+                "flex flex-col p-0 transition-all duration-300",
+                isFullscreen 
+                    ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-none z-[100]" 
+                    : "sm:max-w-2xl max-h-[90vh] rounded-lg"
+            )}>
+                <DialogHeader className="p-6 pb-2 shrink-0 border-b">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                            <DialogTitle className="text-xl md:text-2xl font-bold break-words whitespace-normal leading-tight text-left">
+                                {journal.title}
+                            </DialogTitle>
+                            <DialogDescription className="mt-1">
+                                {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}
+                            </DialogDescription>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {journal.mood && <span className="text-2xl" title={journal.mood}>{moodEmojis[journal.mood]}</span>}
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8" 
+                                onClick={() => setIsFullscreen(!isFullscreen)}
+                            >
+                                {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
                     <div
-                        className="prose dark:prose-invert max-w-none p-4 break-words whitespace-normal"
+                        className="prose dark:prose-invert max-w-none break-words whitespace-normal"
                         dangerouslySetInnerHTML={{ __html: journal.content || '' }}
                     />
                 </div>
@@ -93,7 +114,6 @@ function ViewJournalDialog({
     );
 }
 
-// Journal Popover Content Component
 function JournalPopoverContent({
     setIsNewJournalOpen,
     setEditData,
@@ -181,20 +201,11 @@ function JournalPopoverContent({
 
     return (
         <PopoverContent align="end" className="w-80 mt-2 p-0">
-            <Card className="border-none shadow-none">
-                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+            <Card className="border-none shadow-none relative h-[500px] flex flex-col">
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 shrink-0">
                     <CardTitle className="text-lg font-headline">My Journal</CardTitle>
-                    <Button 
-                        variant="destructive" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full shadow-lg hover:scale-105 transition-transform" 
-                        onClick={handleNew}
-                    >
-                        <Plus className="h-5 w-5" />
-                        <span className="sr-only">New Journal Entry</span>
-                    </Button>
                 </CardHeader>
-                <div className="px-4 pb-2">
+                <div className="px-4 pb-2 shrink-0">
                     <div className="relative">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
@@ -213,15 +224,15 @@ function JournalPopoverContent({
                         )}
                     </div>
                 </div>
-                <CardContent className="p-0">
-                    <ScrollArea className="h-80">
+                <CardContent className="p-0 flex-1 overflow-hidden relative">
+                    <ScrollArea className="h-full">
                         <div className="p-4 pt-0">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-full py-10">
                                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                 </div>
                             ) : filteredJournals && filteredJournals.length > 0 ? (
-                                <ul className="space-y-2">
+                                <ul className="space-y-2 mb-16">
                                     {filteredJournals.map((journal) => (
                                         <li key={journal.id} className="group">
                                             <div
@@ -281,6 +292,17 @@ function JournalPopoverContent({
                             )}
                         </div>
                     </ScrollArea>
+                    <div className="absolute bottom-4 right-4 z-10">
+                        <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="h-12 w-12 rounded-full shadow-2xl hover:scale-110 transition-transform bg-red-600 hover:bg-red-700" 
+                            onClick={handleNew}
+                        >
+                            <Plus className="h-6 w-6" />
+                            <span className="sr-only">New Journal Entry</span>
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         </PopoverContent>
@@ -337,12 +359,12 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
                 <DialogHeader>
                     <DialogTitle>Report an Issue</DialogTitle>
                     <DialogDescription>
-                        Experiencing a bug or have feedback? Let us know. Your report will be sent directly to the app owner.
+                        Let us know what's wrong.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="category">Issue Category</Label>
+                        <Label htmlFor="category">Category</Label>
                         <Select value={category} onValueChange={setCategory}>
                             <SelectTrigger id="category">
                                 <SelectValue placeholder="Select a category" />
@@ -355,12 +377,12 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="report-text">Describe the issue</Label>
+                        <Label htmlFor="report-text">Details</Label>
                         <Textarea
                             id="report-text"
                             value={reportText}
                             onChange={(e) => setReportText(e.target.value)}
-                            placeholder="Please provide as much detail as possible..."
+                            placeholder="Please provide details..."
                             rows={5}
                         />
                     </div>
@@ -625,7 +647,7 @@ export function Header() {
                                                 {notifications.length === 0 ? (
                                                     <div className="text-center text-muted-foreground py-4">
                                                         <Bell className="h-8 w-8 mx-auto mb-2" />
-                                                        <p className="text-sm">You're all caught up!</p>
+                                                        <p className="text-sm">No new notifications.</p>
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-2">

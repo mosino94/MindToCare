@@ -115,7 +115,6 @@ export default function CompleteProfilePage() {
     },
   });
 
-  // Define checkUsername first to avoid ReferenceError
   const checkUsername = useCallback(debounce(async (screenName: string) => {
     if (!user || screenName.length < 3) {
       setUsernameStatus('idle');
@@ -146,18 +145,10 @@ export default function CompleteProfilePage() {
     } catch (error: any) {
       console.error('Failed to check username', error);
       let errorMessage = 'Could not verify username. Please try again.';
-      if (error.message.includes('Permission denied')) {
-          errorMessage = 'Could not verify username due to a configuration issue.';
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Error Checking Name',
-        description: errorMessage,
-      });
-      form.setError('screenName', { type: 'manual', message: 'Could not verify username.' });
+      form.setError('screenName', { type: 'manual', message: errorMessage });
       setUsernameStatus('idle');
     }
-  }, 500), [user, form, toast]);
+  }, 500), [user, form]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -331,24 +322,24 @@ export default function CompleteProfilePage() {
               <DialogHeader>
                   <DialogTitle className="text-2xl font-headline flex items-center gap-2"><ShieldCheck/> Member Guidelines</DialogTitle>
                   <DialogDescription>
-                      Welcome to MindToCare! To ensure this remains a safe and supportive space, all members must agree to these guidelines.
+                      Welcome to MindToCare! All members must agree to these guidelines.
                   </DialogDescription>
               </DialogHeader>
               <ScrollArea className="h-72 w-full rounded-md border p-4 my-4">
                   <h3 className="font-bold mb-2">1. Be Respectful</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">Treat listeners with kindness and respect. We are a community of peers, and many listeners are volunteers. Abusive, harassing, or hateful language will not be tolerated.</p>
+                  <p className="mb-4 text-sm text-muted-foreground">Treat listeners with kindness and respect.</p>
 
                   <h3 className="font-bold mb-2">2. This is Not a Crisis Service</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">MindToCare is for supportive conversations, not for emergencies. If you are in crisis or feel you are a danger to yourself or others, please contact a professional crisis hotline or emergency services immediately.</p>
+                  <p className="mb-4 text-sm text-muted-foreground">MindToCare is for supportive conversations, not for emergencies.</p>
 
                   <h3 className="font-bold mb-2">3. Respect Privacy and Boundaries</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">Do not ask listeners for personal contact information, social media handles, or to move the conversation off-platform. Our listeners are instructed to decline these requests to protect everyone's safety and privacy.</p>
+                  <p className="mb-4 text-sm text-muted-foreground">Do not ask listeners for personal contact information.</p>
                   
                   <h3 className="font-bold mb-2">4. Be Honest and Open</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">The more open you are, the better a listener can support you. You are in control of the conversation. Share what you feel comfortable sharing.</p>
+                  <p className="mb-4 text-sm text-muted-foreground">Share what you feel comfortable sharing.</p>
                   
                   <h3 className="font-bold mb-2">5. Provide Constructive Feedback</h3>
-                  <p className="text-sm text-muted-foreground">After a session, you may have the chance to review your listener. Honest, constructive feedback helps our listeners grow and improves the community for everyone.</p>
+                  <p className="text-sm text-muted-foreground">Feedback helps our listeners grow.</p>
               </ScrollArea>
               <div className="flex items-center space-x-2">
                   <Checkbox id="guidelines-agree-complete" onCheckedChange={(checked) => setGuidelinesAgreed(checked as boolean)} />
@@ -370,7 +361,7 @@ export default function CompleteProfilePage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Complete Your {role === 'listener' ? 'Listener' : 'Member'} Profile</CardTitle>
           <CardDescription>
-            Help others get to know you better. This information will be used for your public profile.
+            Help others get to know you better.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -477,7 +468,7 @@ export default function CompleteProfilePage() {
                       <Input placeholder="Your public display name" {...field} maxLength={18} />
                     </FormControl>
                     <FormDescription>
-                        This is your public name. Your account name is private and cannot be changed. Please note, you can only change your screen name twice within one week of creating the role.
+                        This is your public name. You can only change your screen name twice within one week.
                     </FormDescription>
                      <div className="h-5">
                         {usernameStatus === 'checking' && <p className="text-sm text-muted-foreground">Checking availability...</p>}
@@ -510,7 +501,7 @@ export default function CompleteProfilePage() {
               <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                      The following information is shared between your Member and Listener profiles.
+                      The following information is shared between profiles.
                   </AlertDescription>
               </Alert>
 
@@ -776,7 +767,7 @@ export default function CompleteProfilePage() {
                     render={() => (
                       <FormItem>
                         <div className="mb-4">
-                            <FormLabel className="text-base">Issues You Have Direct Lived Experience With (Optional)</FormLabel>
+                            <FormLabel className="text-base">Experience With (Optional)</FormLabel>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {MENTAL_HEALTH_TOPICS.map((item) => (
@@ -824,7 +815,7 @@ export default function CompleteProfilePage() {
                     render={() => (
                       <FormItem>
                          <div className="mb-4">
-                            <FormLabel className="text-base">Issues You Don't Want to Discuss (Optional)</FormLabel>
+                            <FormLabel className="text-base">Won't Discuss (Optional)</FormLabel>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {MENTAL_HEALTH_TOPICS.map((item) => (

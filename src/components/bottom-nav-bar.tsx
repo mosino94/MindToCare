@@ -52,7 +52,7 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
       });
       toast({
         title: 'Report Submitted',
-        description: "Thank you for your feedback. We'll look into it shortly.",
+        description: "Thank you for your feedback.",
       });
       setReportText('');
       setCategory('');
@@ -62,7 +62,7 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
       toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'Could not submit your report. Please try again.',
+        description: 'Could not submit your report.',
       });
     } finally {
       setIsSubmitting(false);
@@ -75,12 +75,12 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
         <DialogHeader>
           <DialogTitle>Report an Issue</DialogTitle>
           <DialogDescription>
-            Experiencing a bug or have feedback? Let us know. Your report will be sent directly to the app owner.
+            Let us know what's wrong.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="category">Issue Category</Label>
+            <Label htmlFor="category">Category</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select a category" />
@@ -93,12 +93,12 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="report-text">Describe the issue</Label>
+            <Label htmlFor="report-text">Details</Label>
             <Textarea
               id="report-text"
               value={reportText}
               onChange={(e) => setReportText(e.target.value)}
-              placeholder="Please provide as much detail as possible..."
+              placeholder="Provide details..."
               rows={5}
             />
           </div>
@@ -123,6 +123,13 @@ export function BottomNavBar() {
   const { pendingRequest } = useCall();
   const memberContext = useContext(MemberPageContext);
 
+  const getHomePath = useCallback(() => (role === 'listener' ? '/listener' : '/member'), [role]);
+
+  const navItems = useMemo(() => [
+    { href: getHomePath(), icon: Home, label: 'Home' },
+    { href: '/chats', icon: MessageCircle, label: 'Chats' },
+  ], [getHomePath]);
+
   const setIsRequestDialogOpen = memberContext?.setIsRequestDialogOpen ?? (() => { });
 
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -134,14 +141,6 @@ export function BottomNavBar() {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   const activeChatUnreadListenersRef = useRef(new Map<string, () => void>());
-
-  // Move function and nav items definitions above their first usage
-  const getHomePath = useCallback(() => (role === 'listener' ? '/listener' : '/member'), [role]);
-
-  const navItems = useMemo(() => [
-    { href: getHomePath(), icon: Home, label: 'Home' },
-    { href: '/chats', icon: MessageCircle, label: 'Chats' },
-  ], [getHomePath]);
 
   const unreadChatCount = useMemo(() => {
     return Object.values(unreadCounts).filter(count => count > 0).length;
@@ -351,8 +350,7 @@ export function BottomNavBar() {
                   {notifications.length === 0 ? (
                     <div className="flex flex-col items-center justify-center text-center py-8 px-4 border-2 border-dashed rounded-lg bg-card">
                       <Bell className="h-10 w-10 text-muted-foreground mb-3" />
-                      <h3 className="text-lg font-semibold mb-1">No New Notifications</h3>
-                      <p className="text-muted-foreground text-sm">You're all caught up!</p>
+                      <h3 className="text-lg font-semibold mb-1">None</h3>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -382,9 +380,7 @@ export function BottomNavBar() {
                     <span className={cn("absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-background", getStatusColor(realtimeStatus))} />
                   </div>
                 </div>
-                <span
-                  className='block text-center text-xs transition-opacity duration-300 h-4'
-                >
+                <span className='block text-center text-xs transition-opacity duration-300 h-4'>
                   Profile
                 </span>
               </button>
@@ -398,7 +394,7 @@ export function BottomNavBar() {
               {role === 'listener' && (
                 <>
                   <div className="p-2">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Set Status</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Status</p>
                     <RadioGroup value={manualStatus} onValueChange={(v) => handleStatusChange(v as ManualStatus)}>
                       <div className="flex items-center space-x-2 cursor-pointer">
                         <RadioGroupItem value="available" id="available-popover" />
@@ -437,15 +433,13 @@ export function BottomNavBar() {
               </Button>
               <Separator />
               <Button variant="ghost" className="w-full justify-start h-auto py-1.5 text-sm" onClick={() => setIsReportDialogOpen(true)}>
-                <AlertTriangle className="mr-2 h-4 w-4" /> Report an Issue
+                <AlertTriangle className="mr-2 h-4 w-4" /> Report
               </Button>
               <Separator />
               <Button variant="ghost" className="w-full justify-start h-auto py-1.5 text-sm" onClick={handleRoleSwitch}>
                 <Repeat className="mr-2 h-4 w-4" />
                 <span>
-                  {role === 'listener'
-                    ? (memberProfileCompleted ? 'Switch to Member' : 'Become a Member')
-                    : (hasCompletedListenerProfile ? 'Switch to Listener' : 'Become a Listener')}
+                  {role === 'listener' ? 'Member' : 'Listener'}
                 </span>
               </Button>
               <Separator />
@@ -487,12 +481,7 @@ function NavItem({ href, icon: Icon, label, isActive, badgeCount }: { href: stri
           </span>
         ) : null}
       </div>
-      <span
-        className={cn(
-          'block text-center text-xs transition-opacity duration-300 h-4',
-          isActive ? 'opacity-0' : 'opacity-100'
-        )}
-      >
+      <span className={cn('block text-center text-xs transition-opacity duration-300 h-4', isActive ? 'opacity-0' : 'opacity-100')}>
         {label}
       </span>
     </Link>
