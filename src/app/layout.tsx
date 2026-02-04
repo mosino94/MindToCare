@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   description: 'A safe space for connection and support.',
   generator: null,
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: logoUrl,
+    shortcut: logoUrl,
+    apple: logoUrl,
   },
 };
 

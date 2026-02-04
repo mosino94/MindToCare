@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, database } from '@/lib/firebase';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2 } from 'lucide-react';
+import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2, Search, X } from 'lucide-react';
 import { Icons } from './icons';
 import {
     DropdownMenu,
@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { NewJournalDialog } from '@/components/new-journal-dialog';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -562,8 +563,8 @@ export function Header() {
                         href={getHomePath()}
                         className="flex items-center gap-2 mr-6"
                     >
-                        <img src="/logo.png" alt="MindToCare Logo" className="h-8 w-auto" />
-                        <h1 className="text-md md:text-lg font-bold font-headline hidden sm:block">MindToCare</h1>
+                        <Icons.logo className="h-6 w-auto" />
+                        <h1 className="text-md md:text-lg font-bold font-headline">MindToCare</h1>
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-4 lg:gap-6">
