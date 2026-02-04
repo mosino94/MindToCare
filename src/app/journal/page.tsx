@@ -11,13 +11,13 @@ import { format } from 'date-fns';
 import { NewJournalDialog } from '@/components/new-journal-dialog';
 
 const moodEmojis: { [key: string]: string } = {
-    Happy: '😄',
-    Sad: '😢',
-    Neutral: '😐',
-    Excited: '🎉',
-    Calm: '😌',
-    Anxious: '😟',
-    Grateful: '🙏',
+  Happy: '😄',
+  Sad: '😢',
+  Neutral: '😐',
+  Excited: '🎉',
+  Calm: '😌',
+  Anxious: '😟',
+  Grateful: '🙏',
 };
 
 // Function to strip HTML and truncate text
@@ -33,15 +33,16 @@ export default function JournalListPage() {
   const db = useFirestore();
   const [isNewJournalOpen, setIsNewJournalOpen] = useState(false);
 
-  const q = useMemoFirebase(() => (
-    user && db
-      ? query(
-          collection(db, 'users', user.uid, 'journals'),
-          where('status', '==', 'active'),
-          orderBy('createdAt', 'desc')
-        )
-      : null
-  ), [user, db]);
+  const q = useMemoFirebase(() => {
+    if (user && db) {
+      return query(
+        collection(db, 'users', user.uid, 'journals'),
+        where('status', '==', 'active'),
+        orderBy('createdAt', 'desc')
+      );
+    }
+    return null;
+  }, [user, db]);
 
   const { data: journals, isLoading } = useCollection(q);
 
@@ -69,10 +70,10 @@ export default function JournalListPage() {
           </Button>
         </div>
         <div className="flex flex-col items-center justify-center text-center py-16 px-4 border-2 border-dashed rounded-lg bg-card mt-8">
-          <BookOpen className="h-12 w-12 text-muted-foreground mb-4"/>
+          <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold mb-2">No Entries Here</h3>
           <p className="text-muted-foreground max-w-md">
-              Create your first journal entry by clicking the "New Entry" button.
+            Create your first journal entry by clicking the "New Entry" button.
           </p>
         </div>
         <NewJournalDialog open={isNewJournalOpen} onOpenChange={setIsNewJournalOpen} />
@@ -110,7 +111,7 @@ export default function JournalListPage() {
               </CardHeader>
               <CardContent className="flex-1">
                 <p className="line-clamp-4 text-sm text-muted-foreground">
-                    {createSnippet(journal.content)}
+                  {createSnippet(journal.content)}
                 </p>
               </CardContent>
             </Card>

@@ -6,11 +6,11 @@ import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
 const observer: any = {
-    serverTimestamps: 'estimate',
+  serverTimestamps: 'estimate',
 };
 
 interface DocumentWithId extends DocumentData {
-    id: string;
+  id: string;
 }
 
 export function useCollection<T extends DocumentWithId>(q: Query<T> | null) {
@@ -23,7 +23,7 @@ export function useCollection<T extends DocumentWithId>(q: Query<T> | null) {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     const unsubscribe = onSnapshot(
       q,
@@ -38,8 +38,9 @@ export function useCollection<T extends DocumentWithId>(q: Query<T> | null) {
       },
       (error: FirestoreError) => {
         setIsLoading(false);
+
         const permissionError = new FirestorePermissionError({
-          path: `(collection query)`, 
+          path: (q as any)?._query?.path?.segments?.join('/') || '(collection query)',
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);

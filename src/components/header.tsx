@@ -5,15 +5,15 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, database } from '@/lib/firebase';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen } from 'lucide-react';
+import { LogOut, User as UserIcon, MessageCircle, Shield, Bell, Settings, Repeat, Home, AlertTriangle, BookMarked, Loader2, Plus, BookOpen, Pencil, Trash2 } from 'lucide-react';
 import { Icons } from './icons';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -33,93 +33,218 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { NewJournalDialog } from '@/components/new-journal-dialog';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
 
 
 const moodEmojis: { [key: string]: string } = {
-  Happy: '😄',
-  Sad: '😢',
-  Neutral: '😐',
-  Excited: '🎉',
-  Calm: '😌',
-  Anxious: '😟',
-  Grateful: '🙏',
+    Happy: '😄',
+    Sad: '😢',
+    Neutral: '😐',
+    Excited: '🎉',
+    Calm: '😌',
+    Anxious: '😟',
+    Grateful: '🙏',
 };
 
 // Function to strip HTML and truncate text
 const createSnippet = (html: string, length = 50) => {
-  if (!html) return '';
-  const text = html.replace(/<[^>]+>/g, '');
-  if (text.length <= length) return text;
-  return text.substring(0, length) + '...';
+    if (!html) return '';
+    const text = html.replace(/<[^>]+>/g, '');
+    if (text.length <= length) return text;
+    return text.substring(0, length) + '...';
 };
 
-function JournalPopoverContent({ setIsNewJournalOpen }: { setIsNewJournalOpen: (open: boolean) => void }) {
-  const { user } = useAuth();
-  const db = useFirestore();
+// View Journal Dialog Component
+function ViewJournalDialog({
+    journal,
+    open,
+    onOpenChange
+}: {
+    journal: any | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    if (!journal) return null;
 
-  const q = useMemoFirebase(() => (
-    user && db
-      ? query(
-          collection(db, 'users', user.uid, 'journals'),
-          where('status', '==', 'active'),
-          orderBy('createdAt', 'desc')
-        )
-      : null
-  ), [user, db]);
-
-  const { data: journals, isLoading } = useCollection(q);
-
-  return (
-    <PopoverContent align="end" className="w-80 mt-2 p-0">
-      <Card className="border-none shadow-none">
-        <CardHeader className="flex flex-row items-center justify-between p-4">
-          <CardTitle className="text-lg font-headline">My Journal</CardTitle>
-          <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => setIsNewJournalOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="sr-only">New Journal Entry</span>
-          </Button>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-80">
-            <div className="p-4 pt-0">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center justify-between pr-8">
+                        <span>{journal.title}</span>
+                        {journal.mood && <span className="text-2xl">{moodEmojis[journal.mood]}</span>}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {journal.createdAt && format(journal.createdAt.toDate(), 'd MMMM yyyy, h:mm a')}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto">
+                    <div
+                        className="prose dark:prose-invert max-w-none p-4"
+                        dangerouslySetInnerHTML={{ __html: journal.content || '' }}
+                    />
                 </div>
-              ) : journals && journals.length > 0 ? (
-                <ul className="space-y-4">
-                  {journals.map((journal) => (
-                    <li key={journal.id}>
-                      <Link href={`/journal/${journal.id}`} className="block p-3 rounded-md hover:bg-accent -m-3">
-                        <div className="flex items-start justify-between">
-                            <p className="font-semibold line-clamp-1 flex-1 pr-2">{journal.title}</p>
-                            {journal.mood && <span title={journal.mood}>{moodEmojis[journal.mood]}</span>}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// Journal Popover Content Component
+function JournalPopoverContent({
+    setIsNewJournalOpen,
+    setEditData,
+    setViewJournal,
+    onClose
+}: {
+    setIsNewJournalOpen: (open: boolean) => void;
+    setEditData: (data: any) => void;
+    setViewJournal: (journal: any) => void;
+    onClose: () => void;
+}) {
+    const { user } = useAuth();
+    const db = useFirestore();
+    const { toast } = useToast();
+
+    const q = useMemoFirebase(() => {
+        if (user && db) {
+            console.log('🔍 [Header] Setting up query for journals:', `users/${user.uid}/journals`);
+            return query(
+                collection(db, 'users', user.uid, 'journals'),
+                where('status', '==', 'active'),
+                orderBy('createdAt', 'desc')
+            );
+        }
+        return null;
+    }, [user, db]);
+
+    const { data: journals, isLoading } = useCollection(q);
+
+    useEffect(() => {
+        if (!isLoading && journals) {
+            console.log('🔍 [Header] Journals loaded:', journals.length);
+        }
+    }, [journals, isLoading]);
+
+    const handleEdit = (journal: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditData({
+            id: journal.id,
+            title: journal.title,
+            content: journal.content,
+            mood: journal.mood,
+            createdAt: journal.createdAt?.toDate() || new Date(),
+        });
+        setIsNewJournalOpen(true);
+        onClose();
+    };
+
+    const handleDelete = async (journalId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user || !db) return;
+
+        try {
+            const docRef = doc(db, 'users', user.uid, 'journals', journalId);
+            await updateDoc(docRef, { status: 'deleted' });
+            toast({
+                title: 'Journal Deleted',
+                description: 'Your journal entry has been deleted.',
+            });
+        } catch (error) {
+            console.error('Error deleting journal:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Delete Failed',
+                description: 'Could not delete journal. Please try again.',
+            });
+        }
+    };
+
+    const handleView = (journal: any) => {
+        setViewJournal(journal);
+        onClose();
+    };
+
+    const handleNew = () => {
+        setEditData(null);
+        setIsNewJournalOpen(true);
+        onClose();
+    };
+
+    return (
+        <PopoverContent align="end" className="w-80 mt-2 p-0">
+            <Card className="border-none shadow-none">
+                <CardHeader className="flex flex-row items-center justify-between p-4">
+                    <CardTitle className="text-lg font-headline">My Journal</CardTitle>
+                    <Button variant="destructive" size="icon" className="h-7 w-7" onClick={handleNew}>
+                        <Plus className="h-4 w-4" />
+                        <span className="sr-only">New Journal Entry</span>
+                    </Button>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <ScrollArea className="h-80">
+                        <div className="p-4 pt-0">
+                            {isLoading ? (
+                                <div className="flex items-center justify-center h-full py-10">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : journals && journals.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {journals.map((journal) => (
+                                        <li key={journal.id} className="group">
+                                            <div
+                                                className="p-3 rounded-md hover:bg-accent cursor-pointer transition-colors"
+                                                onClick={() => handleView(journal)}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-semibold line-clamp-1 flex-1">{journal.title}</p>
+                                                            {journal.mood && <span title={journal.mood}>{moodEmojis[journal.mood]}</span>}
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            {format(journal.createdAt.toDate(), 'd MMMM yyyy')}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                                                            {createSnippet(journal.content)}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7"
+                                                            onClick={(e) => handleEdit(journal, e)}
+                                                        >
+                                                            <Pencil className="h-3 w-3" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-destructive hover:text-destructive"
+                                                            onClick={(e) => handleDelete(journal.id, e)}
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center py-10">
+                                    <BookOpen className="h-10 w-10 text-muted-foreground mb-3" />
+                                    <p className="text-sm text-muted-foreground">No journal entries yet.</p>
+                                </div>
+                            )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(journal.createdAt.toDate(), 'd MMMM yyyy')}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
-                          {createSnippet(journal.content)}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center py-10">
-                  <BookOpen className="h-10 w-10 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">No journal entries yet.</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </PopoverContent>
-  );
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </PopoverContent>
+    );
 }
 
 type ManualStatus = 'available' | 'busy' | 'offline';
@@ -215,367 +340,377 @@ function ReportIssueDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 }
 
 export function Header() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { user, role, screenName, photoURL, hasCompletedListenerProfile, memberProfileCompleted, identity } = useAuth();
-  const isMobile = useIsMobile();
-  
-  const [unreadCounts, setUnreadCounts] = useState<{ [chatId: string]: number }>({});
-  const [notifications, setNotifications] = useState<any[]>([]);
-  
-  const [manualStatus, setManualStatus] = useState<ManualStatus>('offline');
-  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('offline');
+    const router = useRouter();
+    const pathname = usePathname();
+    const { user, role, screenName, photoURL, hasCompletedListenerProfile, memberProfileCompleted, identity } = useAuth();
+    const isMobile = useIsMobile();
 
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [isNewJournalOpen, setIsNewJournalOpen] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState<{ [chatId: string]: number }>({});
+    const [notifications, setNotifications] = useState<any[]>([]);
 
-  const activeChatUnreadListenersRef = useRef(new Map<string, () => void>());
+    const [manualStatus, setManualStatus] = useState<ManualStatus>('offline');
+    const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('offline');
 
-  const unreadChatCount = useMemo(() => {
-    return Object.values(unreadCounts).filter(count => count > 0).length;
-  }, [unreadCounts]);
+    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+    const [isNewJournalOpen, setIsNewJournalOpen] = useState(false);
+    const [editData, setEditData] = useState<any>(null);
+    const [viewJournal, setViewJournal] = useState<any>(null);
+    const [isJournalPopoverOpen, setIsJournalPopoverOpen] = useState(false);
 
-  const handleMarkNotificationsAsRead = async () => {
-    if (!user || !identity || notifications.length === 0) return;
-    const updates: { [key: string]: any } = {};
-    notifications.forEach(n => {
-        updates[`notifications/${identity}/${n.id}/read`] = true;
-    });
-    await update(ref(database), updates);
-  };
+    const activeChatUnreadListenersRef = useRef(new Map<string, () => void>());
 
-  // Effect to get the manually set status for the listener (for the radio buttons)
-  useEffect(() => {
-    if (user && role === 'listener') {
-      const manualStatusRef = ref(database, `users/${user.uid}/status`);
-      const unsubscribe = onValue(manualStatusRef, (snapshot) => {
-        setManualStatus(snapshot.val() || 'offline');
-      });
-      return () => unsubscribe();
-    }
-  }, [user, role]);
+    const unreadChatCount = useMemo(() => {
+        return Object.values(unreadCounts).filter(count => count > 0).length;
+    }, [unreadCounts]);
 
-  // Effect to get the actual, real-time status (for the dot indicator)
-  useEffect(() => {
-    if (user && identity) {
-      const realTimeStatusRef = ref(database, `status/${identity}`);
-      const unsubscribe = onValue(realTimeStatusRef, (snapshot) => {
-        setRealtimeStatus(snapshot.val()?.state || 'offline');
-      });
-      return () => unsubscribe();
-    }
-  }, [user, identity]);
-
-  useEffect(() => {
-    if (!user || !identity) {
-        // Cleanup when user logs out or identity is not available
-        activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
-        activeChatUnreadListenersRef.current.clear();
-        setUnreadCounts({});
-        setNotifications([]);
-        return;
-    }
-
-    // Main listener for the list of chats belonging to the current user identity
-    const userChatsRef = ref(database, `user_chats/${identity}`);
-    const userChatsListener = onValue(userChatsRef, (snapshot) => {
-        const newChatIds = new Set<string>(snapshot.exists() ? Object.keys(snapshot.val()) : []);
-        const currentListeners = activeChatUnreadListenersRef.current;
-
-        // Clean up listeners for chats that have been removed
-        currentListeners.forEach((cleanup, existingChatId) => {
-            if (!newChatIds.has(existingChatId)) {
-                cleanup();
-                currentListeners.delete(existingChatId);
-            }
+    const handleMarkNotificationsAsRead = async () => {
+        if (!user || !identity || notifications.length === 0) return;
+        const updates: { [key: string]: any } = {};
+        notifications.forEach(n => {
+            updates[`notifications/${identity}/${n.id}/read`] = true;
         });
-        
-        setUnreadCounts(prev => {
-            const newCounts = { ...prev };
-            let changed = false;
-            Object.keys(newCounts).forEach(chatId => {
-                if (!newChatIds.has(chatId)) {
-                    delete newCounts[chatId];
-                    changed = true;
-                }
-            });
-            return changed ? newCounts : prev;
-        });
-
-        // Add listeners for new chats
-        newChatIds.forEach(chatId => {
-            if (currentListeners.has(chatId)) return;
-
-            const unreadRef = ref(database, `chats/${chatId}/unread/${identity}`);
-            const unreadListener = onValue(unreadRef, (unreadSnapshot) => {
-                setUnreadCounts(prev => ({
-                    ...prev,
-                    [chatId]: unreadSnapshot.val() || 0,
-                }));
-            });
-            
-            const cleanup = () => off(unreadRef, 'value', unreadListener);
-            currentListeners.set(chatId, cleanup);
-        });
-    });
-
-    // Notifications listener (now role-specific)
-    const notificationsRef = ref(database, `notifications/${identity}`);
-    const notificationsListener = onValue(notificationsRef, (snapshot) => {
-        const loaded: any[] = [];
-        if(snapshot.exists()){
-            snapshot.forEach(child => {
-                if(!child.val().read) {
-                    loaded.push({id: child.key, ...child.val()});
-                }
-            })
-        }
-        setNotifications(loaded.sort((a,b) => b.createdAt - a.createdAt));
-    });
-
-    // Cleanup function for the entire effect when user/identity changes or component unmounts
-    return () => {
-      off(userChatsRef, 'value', userChatsListener);
-      activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
-      activeChatUnreadListenersRef.current.clear();
-      off(notificationsRef, 'value', notificationsListener);
+        await update(ref(database), updates);
     };
-  }, [user, identity]);
-  
-  const getHomePath = () => {
-    if (role === 'listener') return '/listener';
-    return '/member';
-  }
 
-  const handleSignOut = async () => {
-    sessionStorage.removeItem('adminAuthenticated');
-    sessionStorage.removeItem('roleSelectedThisSession');
-    // PresenceManager will handle setting status to offline on logout
-    await signOut(auth);
-    router.push('/login');
-  };
+    // Effect to get the manually set status for the listener (for the radio buttons)
+    useEffect(() => {
+        if (user && role === 'listener') {
+            const manualStatusRef = ref(database, `users/${user.uid}/status`);
+            const unsubscribe = onValue(manualStatusRef, (snapshot) => {
+                setManualStatus(snapshot.val() || 'offline');
+            });
+            return () => unsubscribe();
+        }
+    }, [user, role]);
 
-  const handleRoleSwitch = async () => {
-    if (!user) return;
-    const newRole = role === 'listener' ? 'member' : 'listener';
-    
-    if (newRole === 'listener' && !hasCompletedListenerProfile) {
-        router.push('/listener/training');
-    } else {
-        await update(ref(database, `users/${user.uid}`), { role: newRole });
+    // Effect to get the actual, real-time status (for the dot indicator)
+    useEffect(() => {
+        if (user && identity) {
+            const realTimeStatusRef = ref(database, `status/${identity}`);
+            const unsubscribe = onValue(realTimeStatusRef, (snapshot) => {
+                setRealtimeStatus(snapshot.val()?.state || 'offline');
+            });
+            return () => unsubscribe();
+        }
+    }, [user, identity]);
+
+    useEffect(() => {
+        if (!user || !identity) {
+            // Cleanup when user logs out or identity is not available
+            activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
+            activeChatUnreadListenersRef.current.clear();
+            setUnreadCounts({});
+            setNotifications([]);
+            return;
+        }
+
+        // Main listener for the list of chats belonging to the current user identity
+        const userChatsRef = ref(database, `user_chats/${identity}`);
+        const userChatsListener = onValue(userChatsRef, (snapshot) => {
+            const newChatIds = new Set<string>(snapshot.exists() ? Object.keys(snapshot.val()) : []);
+            const currentListeners = activeChatUnreadListenersRef.current;
+
+            // Clean up listeners for chats that have been removed
+            currentListeners.forEach((cleanup, existingChatId) => {
+                if (!newChatIds.has(existingChatId)) {
+                    cleanup();
+                    currentListeners.delete(existingChatId);
+                }
+            });
+
+            setUnreadCounts(prev => {
+                const newCounts = { ...prev };
+                let changed = false;
+                Object.keys(newCounts).forEach(chatId => {
+                    if (!newChatIds.has(chatId)) {
+                        delete newCounts[chatId];
+                        changed = true;
+                    }
+                });
+                return changed ? newCounts : prev;
+            });
+
+            // Add listeners for new chats
+            newChatIds.forEach(chatId => {
+                if (currentListeners.has(chatId)) return;
+
+                const unreadRef = ref(database, `chats/${chatId}/unread/${identity}`);
+                const unreadListener = onValue(unreadRef, (unreadSnapshot) => {
+                    setUnreadCounts(prev => ({
+                        ...prev,
+                        [chatId]: unreadSnapshot.val() || 0,
+                    }));
+                });
+
+                const cleanup = () => off(unreadRef, 'value', unreadListener);
+                currentListeners.set(chatId, cleanup);
+            });
+        });
+
+        // Notifications listener (now role-specific)
+        const notificationsRef = ref(database, `notifications/${identity}`);
+        const notificationsListener = onValue(notificationsRef, (snapshot) => {
+            const loaded: any[] = [];
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    if (!child.val().read) {
+                        loaded.push({ id: child.key, ...child.val() });
+                    }
+                })
+            }
+            setNotifications(loaded.sort((a, b) => b.createdAt - a.createdAt));
+        });
+
+        // Cleanup function for the entire effect when user/identity changes or component unmounts
+        return () => {
+            off(userChatsRef, 'value', userChatsListener);
+            activeChatUnreadListenersRef.current.forEach(cleanup => cleanup());
+            activeChatUnreadListenersRef.current.clear();
+            off(notificationsRef, 'value', notificationsListener);
+        };
+    }, [user, identity]);
+
+    const getHomePath = () => {
+        if (role === 'listener') return '/listener';
+        return '/member';
     }
-  };
 
-  const handleStatusChange = (newStatus: ManualStatus) => {
-    if (!user || role !== 'listener') return;
+    const handleSignOut = async () => {
+        sessionStorage.removeItem('adminAuthenticated');
+        sessionStorage.removeItem('roleSelectedThisSession');
+        // PresenceManager will handle setting status to offline on logout
+        await signOut(auth);
+        router.push('/login');
+    };
 
-    const statusRef = ref(database, `users/${user.uid}/status`);
-    set(statusRef, newStatus);
-    setManualStatus(newStatus);
-  };
+    const handleRoleSwitch = async () => {
+        if (!user) return;
+        const newRole = role === 'listener' ? 'member' : 'listener';
 
-  const navItems = [
-    { href: getHomePath(), icon: Home, label: 'Home' },
-    { href: '/chats', icon: MessageCircle, label: 'Chats', badgeCount: unreadChatCount },
-  ];
+        if (newRole === 'listener' && !hasCompletedListenerProfile) {
+            router.push('/listener/training');
+        } else {
+            await update(ref(database, `users/${user.uid}`), { role: newRole });
+        }
+    };
 
-  const isItemActive = (href: string) => {
-    if (href === getHomePath()) {
-        return pathname === getHomePath();
-    }
-    if (href === '/chats') {
-      return pathname.startsWith('/chats') || pathname.startsWith('/chat/');
-    }
-    return pathname.startsWith(href);
-  };
+    const handleStatusChange = (newStatus: ManualStatus) => {
+        if (!user || role !== 'listener') return;
 
-  return (
-    <>
-        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
-        <div className="container flex h-16 items-center px-4">
-            <Link
-            href={getHomePath()}
-            className="flex items-center gap-2 mr-6"
-            >
-            <Icons.logo className="h-6 w-auto" />
-            <h1 className="text-md md:text-lg font-bold font-headline">MindToCare</h1>
-            </Link>
+        const statusRef = ref(database, `users/${user.uid}/status`);
+        set(statusRef, newStatus);
+        setManualStatus(newStatus);
+    };
 
-            {!isMobile && <nav className="flex items-center gap-4 lg:gap-6">
-                {navItems.map(item => (
+    const navItems = [
+        { href: getHomePath(), icon: Home, label: 'Home' },
+        { href: '/chats', icon: MessageCircle, label: 'Chats', badgeCount: unreadChatCount },
+    ];
+
+    const isItemActive = (href: string) => {
+        if (href === getHomePath()) {
+            return pathname === getHomePath();
+        }
+        if (href === '/chats') {
+            return pathname.startsWith('/chats') || pathname.startsWith('/chat/');
+        }
+        return pathname.startsWith(href);
+    };
+
+    return (
+        <>
+            <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
+                <div className="container flex h-16 items-center px-4">
                     <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                            buttonVariants({ variant: 'ghost' }),
-                            "text-sm font-medium transition-colors hover:text-primary",
-                            isItemActive(item.href) ? "text-primary" : "text-muted-foreground"
-                        )}
+                        href={getHomePath()}
+                        className="flex items-center gap-2 mr-6"
                     >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                        {item.badgeCount && item.badgeCount > 0 && (
-                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                                {item.badgeCount}
-                            </span>
-                        )}
+                        <Icons.logo className="h-6 w-auto" />
+                        <h1 className="text-md md:text-lg font-bold font-headline">MindToCare</h1>
                     </Link>
-                ))}
-            </nav>}
-            
-            <div className="flex items-center justify-end space-x-1 ml-auto">
-                {role === 'member' && (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                        <BookMarked className="h-5 w-5" />
-                        <span className="sr-only">Journal</span>
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>My Journal</DropdownMenuItem>
-                            </PopoverTrigger>
-                            <JournalPopoverContent setIsNewJournalOpen={setIsNewJournalOpen} />
-                        </Popover>
-                        <DropdownMenuItem onSelect={() => setIsNewJournalOpen(true)}>
-                            New Journal
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                )}
-                <ThemeToggle />
-                {!isMobile && (
-                <>
-                    <Popover onOpenChange={(open) => { if(!open) { handleMarkNotificationsAsRead(); }}}>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                            <Bell className="h-5 w-5" />
-                            {notifications.length > 0 && (
-                                <span className="absolute top-1 right-1 flex min-w-[1rem] h-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                                    {notifications.length}
-                                </span>
-                            )}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="end" className="w-80 mt-2">
-                        <Card className="border-none shadow-none">
-                            <CardHeader className="p-2 pt-0">
-                                <CardTitle className="text-base">Notifications</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 pt-0 max-h-80 overflow-y-auto">
-                            {notifications.length === 0 ? (
-                                <div className="text-center text-muted-foreground py-4">
-                                    <Bell className="h-8 w-8 mx-auto mb-2" />
-                                    <p className="text-sm">You're all caught up!</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                {notifications.map(n => (
-                                    <div key={n.id} className="text-sm p-2 rounded-md bg-accent/50">
-                                        {n.message}
-                                    </div>
-                                ))}
-                                </div>
-                            )}
-                            </CardContent>
-                        </Card>
-                    </PopoverContent>
-                    </Popover>
 
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={photoURL || undefined} alt={screenName || 'User'}/>
-                                    <AvatarFallback>{getInitials(screenName)}</AvatarFallback>
-                                </Avatar>
-                                <span className={cn(
-                                    "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background",
-                                    getStatusColor(realtimeStatus)
-                                )} />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end" forceMount>
-                            <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none truncate">{screenName || user?.email}</p>
-                                    <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
-                                </div>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {role === 'listener' && (
-                                <>
-                                <div className="p-2">
-                                    <p className="text-xs font-medium text-muted-foreground mb-2">Set Status</p>
-                                    <RadioGroup value={manualStatus} onValueChange={(v) => handleStatusChange(v as ManualStatus)}>
-                                    <div className="flex items-center space-x-2 cursor-pointer">
-                                        <RadioGroupItem value="available" id="available-header" />
-                                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                        <Label htmlFor="available-header" className="cursor-pointer text-sm font-normal">Online</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 cursor-pointer">
-                                        <RadioGroupItem value="busy" id="busy-header" />
-                                        <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-                                        <Label htmlFor="busy-header" className="cursor-pointer text-sm font-normal">Busy</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 cursor-pointer">
-                                        <RadioGroupItem value="offline" id="offline-header" />
-                                        <span className="h-2 w-2 rounded-full bg-slate-400"></span>
-                                        <Label htmlFor="offline-header" className="cursor-pointer text-sm font-normal">Offline</Label>
-                                    </div>
-                                    </RadioGroup>
-                                </div>
-                                <DropdownMenuSeparator />
-                                </>
-                            )}
-                            <DropdownMenuItem asChild>
-                                <Link href="/profile">
-                                    <UserIcon className="mr-2 h-4 w-4" />
-                                    <span>Profile</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/settings">
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Settings</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/admin">
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    <span>Admin</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            <span>Report an Issue</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={handleRoleSwitch}>
-                                <Repeat className="mr-2 h-4 w-4" />
-                                <span>
-                                    {role === 'listener'
-                                        ? (memberProfileCompleted ? 'Switch to Member' : 'Become a Member')
-                                        : (hasCompletedListenerProfile ? 'Switch to Listener' : 'Become a Listener')}
-                                </span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>Sign Out</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
-                )}
-            </div>
-        </div>
-        </header>
-        <NewJournalDialog open={isNewJournalOpen} onOpenChange={setIsNewJournalOpen} />
-        {!isMobile && <ReportIssueDialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen} />}
-    </>
-  );
+                    {!isMobile && <nav className="flex items-center gap-4 lg:gap-6">
+                        {navItems.map(item => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    buttonVariants({ variant: 'ghost' }),
+                                    "text-sm font-medium transition-colors hover:text-primary",
+                                    isItemActive(item.href) ? "text-primary" : "text-muted-foreground"
+                                )}
+                            >
+                                <item.icon className="h-4 w-4" />
+                                {item.label}
+                                {item.badgeCount && item.badgeCount > 0 && (
+                                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                                        {item.badgeCount}
+                                    </span>
+                                )}
+                            </Link>
+                        ))}
+                    </nav>}
+
+                    <div className="flex items-center justify-end space-x-1 ml-auto">
+                        {role === 'member' && (
+                            <Popover open={isJournalPopoverOpen} onOpenChange={setIsJournalPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                                        <BookMarked className="h-5 w-5" />
+                                        <span className="sr-only">Journal</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <JournalPopoverContent
+                                    setIsNewJournalOpen={setIsNewJournalOpen}
+                                    setEditData={setEditData}
+                                    setViewJournal={setViewJournal}
+                                    onClose={() => setIsJournalPopoverOpen(false)}
+                                />
+                            </Popover>
+                        )}
+                        <ThemeToggle />
+                        {!isMobile && (
+                            <>
+                                <Popover onOpenChange={(open) => { if (!open) { handleMarkNotificationsAsRead(); } }}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                                            <Bell className="h-5 w-5" />
+                                            {notifications.length > 0 && (
+                                                <span className="absolute top-1 right-1 flex min-w-[1rem] h-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                                                    {notifications.length}
+                                                </span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-80 mt-2">
+                                        <Card className="border-none shadow-none">
+                                            <CardHeader className="p-2 pt-0">
+                                                <CardTitle className="text-base">Notifications</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="p-2 pt-0 max-h-80 overflow-y-auto">
+                                                {notifications.length === 0 ? (
+                                                    <div className="text-center text-muted-foreground py-4">
+                                                        <Bell className="h-8 w-8 mx-auto mb-2" />
+                                                        <p className="text-sm">You're all caught up!</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {notifications.map(n => (
+                                                            <div key={n.id} className="text-sm p-2 rounded-md bg-accent/50">
+                                                                {n.message}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    </PopoverContent>
+                                </Popover>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={photoURL || undefined} alt={screenName || 'User'} />
+                                                <AvatarFallback>{getInitials(screenName)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className={cn(
+                                                "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background",
+                                                getStatusColor(realtimeStatus)
+                                            )} />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none truncate">{screenName || user?.email}</p>
+                                                <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {role === 'listener' && (
+                                            <>
+                                                <div className="p-2">
+                                                    <p className="text-xs font-medium text-muted-foreground mb-2">Set Status</p>
+                                                    <RadioGroup value={manualStatus} onValueChange={(v) => handleStatusChange(v as ManualStatus)}>
+                                                        <div className="flex items-center space-x-2 cursor-pointer">
+                                                            <RadioGroupItem value="available" id="available-header" />
+                                                            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                                            <Label htmlFor="available-header" className="cursor-pointer text-sm font-normal">Online</Label>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2 cursor-pointer">
+                                                            <RadioGroupItem value="busy" id="busy-header" />
+                                                            <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                                                            <Label htmlFor="busy-header" className="cursor-pointer text-sm font-normal">Busy</Label>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2 cursor-pointer">
+                                                            <RadioGroupItem value="offline" id="offline-header" />
+                                                            <span className="h-2 w-2 rounded-full bg-slate-400"></span>
+                                                            <Label htmlFor="offline-header" className="cursor-pointer text-sm font-normal">Offline</Label>
+                                                        </div>
+                                                    </RadioGroup>
+                                                </div>
+                                                <DropdownMenuSeparator />
+                                            </>
+                                        )}
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/profile">
+                                                <UserIcon className="mr-2 h-4 w-4" />
+                                                <span>Profile</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/settings">
+                                                <Settings className="mr-2 h-4 w-4" />
+                                                <span>Settings</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/admin">
+                                                <Shield className="mr-2 h-4 w-4" />
+                                                <span>Admin</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
+                                            <AlertTriangle className="mr-2 h-4 w-4" />
+                                            <span>Report an Issue</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleRoleSwitch}>
+                                            <Repeat className="mr-2 h-4 w-4" />
+                                            <span>
+                                                {role === 'listener'
+                                                    ? (memberProfileCompleted ? 'Switch to Member' : 'Become a Member')
+                                                    : (hasCompletedListenerProfile ? 'Switch to Listener' : 'Become a Listener')}
+                                            </span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Sign Out</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </header>
+            <NewJournalDialog
+                open={isNewJournalOpen}
+                onOpenChange={(open) => {
+                    setIsNewJournalOpen(open);
+                    if (!open) setEditData(null);
+                }}
+                editData={editData}
+            />
+            <ViewJournalDialog
+                journal={viewJournal}
+                open={!!viewJournal}
+                onOpenChange={(open) => { if (!open) setViewJournal(null); }}
+            />
+            {!isMobile && <ReportIssueDialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen} />}
+        </>
+    );
 }

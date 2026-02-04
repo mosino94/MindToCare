@@ -23,8 +23,9 @@ import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import FontFamily from '@tiptap/extension-font-family';
-import TiptapTextStyle from '@tiptap/extension-text-style';
+import { TextStyle as TiptapTextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import BubbleMenuExtension from '@tiptap/extension-bubble-menu';
 
 // Added imports
 import { useAuth } from '@/hooks/use-auth';
@@ -38,25 +39,26 @@ import { Separator } from '@/components/ui/separator';
 
 // Custom FontSize functionality using TextStyle extension
 const TextStyleWithFontSize = TiptapTextStyle.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      fontSize: {
-        default: null,
-        parseHTML: element => element.style.fontSize,
-        renderHTML: attributes => {
-          if (!attributes.fontSize) {
-            return {};
-          }
-          return { style: `font-size: ${attributes.fontSize}` };
-        },
-      },
-    };
-  },
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            fontSize: {
+                default: null,
+                parseHTML: element => element.style.fontSize,
+                renderHTML: attributes => {
+                    if (!attributes.fontSize) {
+                        return {};
+                    }
+                    return { style: `font-size: ${attributes.fontSize}` };
+                },
+            },
+        };
+    },
 });
 
 
 const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { editor: Editor | null, isFullscreen: boolean, onToggleFullscreen: () => void, className?: string }) => {
+    // ... code truncated for brevity, assume component body is unchanged ...
     const { user } = useAuth();
     const { toast } = useToast();
 
@@ -75,7 +77,7 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        
+
         input.onchange = async () => {
             const file = input.files?.[0];
             if (!file) return;
@@ -86,7 +88,7 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
             });
 
             const imageStorageRef = storageRef(storage, `journal-images/${user.uid}/${Date.now()}_${file.name}`);
-            
+
             try {
                 await uploadBytes(imageStorageRef, file);
                 const url = await getDownloadURL(imageStorageRef);
@@ -114,7 +116,7 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
     if (!editor) {
         return null;
     }
-    
+
     const fontFamilies = ["Inter", "Comic Sans MS", "Serif", "Monospace", "Cursive"];
     const fontSizes = ["10", "12", "14", "16", "18", "20", "22", "24", "25"];
     const colors = ["#000000", "#495057", "#fa5252", "#e64980", "#be4bdb", "#7950f2", "#4c6ef5", "#228be6", "#15aabf", "#12b886", "#40c057", "#82c91e", "#fcc419", "#fd7e14", "#868e96", "#ff6b6b", "#f06595", "#da77f2", "#9775fa", "#748ffc", "#4dabf7"];
@@ -135,7 +137,7 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
                 <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
                     <div className="p-2 space-y-2">
                         <label className="text-xs text-muted-foreground px-1">Font Family</label>
-                        <Select 
+                        <Select
                             value={editor.getAttributes('textStyle').fontFamily || 'Inter'}
                             onValueChange={(value) => editor.chain().focus().setFontFamily(value).run()}
                         >
@@ -145,7 +147,7 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
                             <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                                 {fontFamilies.map(font => (
                                     <SelectItem key={font} value={font} onMouseDown={(e) => e.preventDefault()}>
-                                        <span style={{fontFamily: font}}>{font}</span>
+                                        <span style={{ fontFamily: font }}>{font}</span>
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -270,7 +272,7 @@ const Toolbar = ({ editor, isFullscreen, onToggleFullscreen, className }: { edit
                     </div>
                 </DropdownMenuContent>
             </DropdownMenu>
-            
+
             {/* Image Upload Button */}
             <Button
                 type="button"
@@ -310,23 +312,34 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
                 blockquote: true,
                 horizontalRule: false,
                 link: false, // Disable starter kit's link
+                orderedList: {
+                    keepMarks: true,
+                    keepAttributes: false,
+                },
+                bulletList: {
+                    keepMarks: true,
+                    keepAttributes: false,
+                },
             }),
             TiptapUnderline,
-            TiptapLink.configure({ 
-                openOnClick: false, 
+            TiptapLink.configure({
+                openOnClick: false,
                 autolink: false,
                 linkOnPaste: false,
             }),
             TiptapImage.configure({ inline: false }),
             HorizontalRule,
             Placeholder.configure({ placeholder: placeholder || "Start writing your journal entry here..." }),
-            Blockquote,
+            // Removed Blockquote to avoid duplicate extension error
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             Superscript,
             Subscript,
             FontFamily,
             TextStyleWithFontSize,
             Color,
+            BubbleMenuExtension.configure({
+                pluginKey: 'bubbleMenu', // helps avoid conflicts
+            }),
         ],
         content: value,
         onUpdate: ({ editor }) => {
@@ -334,9 +347,10 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
         },
         editorProps: {
             attributes: {
-              class: 'ProseMirror',
+                class: 'ProseMirror',
             },
         },
+        immediatelyRender: false,
     });
 
     const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
@@ -353,11 +367,11 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
 
     const saveLink = useCallback(() => {
         if (!editor) return;
-        
+
         // unsetLink if url is empty
         if (!linkUrl) {
             editor.chain().focus().extendMarkRange('link').unsetLink().run();
-             setIsLinkPopoverOpen(false);
+            setIsLinkPopoverOpen(false);
             return;
         }
 
@@ -374,14 +388,18 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
                 isFullscreen={isFullscreen}
                 onToggleFullscreen={onToggleFullscreen}
             />
-             {editor && (
+            {editor && (
                 <BubbleMenu
                     editor={editor}
                     tippyOptions={{ duration: 100, zIndex: isFullscreen ? 101 : 10, appendTo: 'parent' }}
-                    shouldShow={({ editor, state }) => {
-                        const { from, to } = state.selection;
-                        const isSelection = from !== to;
-                        return isSelection || editor.isActive('link');
+                    shouldShow={({ editor, view, state, from, to }) => {
+                        const { doc, selection } = state;
+                        const { empty } = selection;
+                        // Don't show if empty selection
+                        if (empty) return false;
+                        // Don't show on images
+                        if (editor.isActive('image')) return false;
+                        return true;
                     }}
                     className="flex items-center gap-1 p-1 rounded-md bg-background border shadow-md"
                 >
@@ -389,7 +407,7 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => editor.chain().focus().toggleItalic().run()} data-active={editor.isActive('italic')} onMouseDown={(e) => e.preventDefault()}> <Italic className="h-4 w-4" /> </Button>
                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => editor.chain().focus().toggleUnderline().run()} data-active={editor.isActive('underline')} onMouseDown={(e) => e.preventDefault()}> <Underline className="h-4 w-4" /> </Button>
                     <Separator orientation="vertical" className="h-6 mx-1" />
-                    
+
                     <Popover open={isLinkPopoverOpen} onOpenChange={handleLinkPopoverOpenChange}>
                         <PopoverTrigger asChild>
                             <Button
@@ -402,11 +420,11 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
                                 <LinkIcon className="h-4 w-4" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent 
-                            className="w-auto p-2" 
-                            align="start" 
+                        <PopoverContent
+                            className="w-auto p-2"
+                            align="start"
                             side="bottom"
-                             onOpenAutoFocus={(e) => {
+                            onOpenAutoFocus={(e) => {
                                 e.preventDefault();
                                 linkInputRef.current?.focus({ preventScroll: true });
                             }}
@@ -429,7 +447,7 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
                                         setIsLinkPopoverOpen(false);
                                         setLinkUrl('');
                                     }} onMouseDown={(e) => e.preventDefault()}>
-                                        <Unlink className="h-4 w-4"/>
+                                        <Unlink className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
@@ -447,14 +465,14 @@ export function RichTextEditor({ value, onChange, placeholder, isFullscreen, onT
                         <Eraser className="h-4 w-4" />
                     </Button>
                 </BubbleMenu>
-             )}
-            <EditorContent 
-                editor={editor} 
+            )}
+            <EditorContent
+                editor={editor}
                 className={cn(
-                  isFullscreen ? "flex-1 overflow-y-auto min-h-0 hide-scrollbar" : "overflow-y-auto hide-scrollbar"
+                    isFullscreen ? "flex-1 overflow-y-auto min-h-0 hide-scrollbar" : "overflow-y-auto hide-scrollbar"
                 )} />
         </div>
     );
 }
 
-    
+

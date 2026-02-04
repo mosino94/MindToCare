@@ -1,24 +1,108 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // By default, deny all reads and writes to all documents.
-    match /{document=**} {
-      allow read, write: if false;
+
+    function isAuth() {
+      return request.auth != null;
     }
 
-    // Allow a user to get their own user document. This is required
-    // for them to be able to query the 'journals' subcollection.
-    // Also, allow them to update their own document.
-    match /users/{userId} {
-      allow get, update: if request.auth.uid == userId;
+    function activeRole() {
+      return exists(/databases/$(database)/documents/active_roles/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/active_roles/$(request.auth.uid)).data.role
+        : null;
     }
 
-    // Allow a user to read (list, get) and write (create, update, delete)
-    // documents in their own 'journals' subcollection.
-    match /users/{userId}/journals/{journalId} {
-      allow read, write: if request.auth.uid == userId;
+    function identity() {
+      return activeRole() != null
+        ? request.auth.uid + "_" + activeRole()
+        : null;
+    }
+
+    /* -------- Accounts -------- */
+    match /accounts/{uid} {
+      allow create: if isAuth() && request.auth.uid == uid;
+      allow read, update: if isAuth() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    /* -------- Active role mirror -------- */
+    match /active_roles/{uid} {
+      allow read: if isAuth() && request.auth.uid == uid;
+      allow create: if isAuth() && request.auth.uid == uid;
+      allow update: if isAuth() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    /* -------- Role profiles -------- */
+    match /roles/{uid}/profiles/{role} {
+      allow read: if true;
+      allow write: if isAuth() && request.auth.uid == uid;
+    }
+
+    /* -------- Global unique names -------- */
+    match /identity_names/{name} {
+      allow read: if true;
+      allow create: if isAuth()
+        && !exists(/databases/$(database)/documents/identity_names/$(name));
+      allow update, delete: if isAuth()
+        && resource.data.identityId == identity();
+    }
+
+    /* -------- Chats -------- */
+    match /chats/{chatId} {
+
+      allow create: if isAuth()
+        && request.resource.data.participants is list
+        && identity() in request.resource.data.participants;
+
+      allow read, update, delete: if isAuth()
+        && identity() in resource.data.participants;
+
+      match /messages/{msgId} {
+        allow create: if isAuth()
+          && identity() in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.sender == identity();
+
+        allow read: if isAuth()
+          && identity() in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+
+    /* -------- User chat list -------- */
+    match /user_chats/{identityId}/{chatId} {
+      allow read, write: if isAuth() && identityId == identity();
+    }
+
+    /* -------- Requests -------- */
+    match /requests/{id} {
+      allow create: if isAuth()
+        && request.resource.data.sender == identity();
+
+      allow read: if isAuth()
+        && (resource.data.sender == identity()
+            || resource.data.receiver == identity());
+
+      allow update, delete: if isAuth()
+        && resource.data.receiver == identity();
+    }
+
+    /* -------- Reports -------- */
+    match /reports/{id} {
+      allow create: if isAuth();
+      allow read: if false;
+    }
+
+    /* -------- Reviews -------- */
+    match /reviews/{listenerIdentity}/{reviewId} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.author == identity();
+      allow update, delete: if false;
+    }
+
+    /* -------- User Journals (NEW) -------- */
+    match /users/{uid}/journals/{journalId} {
+      allow read, write: if isAuth() && request.auth.uid == uid;
     }
   }
 }
