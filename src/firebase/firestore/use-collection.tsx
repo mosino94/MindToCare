@@ -38,13 +38,19 @@ export function useCollection<T extends DocumentWithId>(q: Query<T> | null) {
       },
       (error: FirestoreError) => {
         setIsLoading(false);
+        console.error('🔥 [useCollection] Firestore Error:', error.code, error.message);
 
-        const permissionError = new FirestorePermissionError({
-          path: (q as any)?._query?.path?.segments?.join('/') || '(collection query)',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        console.error('Error fetching collection:', error);
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: (q as any)?._query?.path?.segments?.join('/') || '(collection query)',
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+          // For other errors (like failed-precondition for missing indexes), 
+          // let the error bubble up naturally or log it clearly.
+          console.error('❌ Non-permission error encountered:', error);
+        }
       }
     );
 
