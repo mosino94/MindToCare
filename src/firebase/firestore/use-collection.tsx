@@ -13,7 +13,7 @@ interface DocumentWithId extends DocumentData {
   id: string;
 }
 
-export function useCollection<T extends DocumentWithId>(q: Query<T> | null) {
+export function useCollection<T extends DocumentData>(q: Query<T> | null) {
   const [data, setData] = useState<T[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
