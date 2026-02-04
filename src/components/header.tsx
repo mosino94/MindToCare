@@ -112,7 +112,7 @@ function JournalPopoverContent({
             console.log('🔍 [Header] Setting up query for journals:', `users/${user.uid}/journals`);
             return query(
                 collection(db, 'users', user.uid, 'journals'),
-                where('status', '==', 'active'),
+                // removing filters to see everything
                 orderBy('createdAt', 'desc')
             );
         }
@@ -122,10 +122,22 @@ function JournalPopoverContent({
     const { data: journals, isLoading } = useCollection(q);
 
     useEffect(() => {
-        if (!isLoading && journals) {
-            console.log('🔍 [Header] Journals loaded:', journals.length);
+        if (!isLoading) {
+            console.log('🔍 [Header] Journals results:', journals ? journals.length : 'null');
+            if (journals && journals.length === 0) {
+                // If zero, try without orderBy too in case of index issues
+                toast({
+                    title: "Journal Debug",
+                    description: `Found 0 journals at users/${user?.uid}/journals. Check if the UID is correct.`,
+                });
+            } else if (journals) {
+                toast({
+                    title: "Journal Debug",
+                    description: `Successfully found ${journals.length} journals.`,
+                });
+            }
         }
-    }, [journals, isLoading]);
+    }, [journals, isLoading, user?.uid, toast]);
 
     const handleEdit = (journal: any, e: React.MouseEvent) => {
         e.stopPropagation();
