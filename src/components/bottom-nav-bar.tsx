@@ -440,7 +440,9 @@ export function BottomNavBar() {
               <Button variant="ghost" className="w-full justify-start h-auto py-1.5 text-sm" onClick={handleRoleSwitch}>
                 <Repeat className="mr-2 h-4 w-4" />
                 <span>
-                  {role === 'listener' ? 'Member' : 'Listener'}
+                  {role === 'listener' 
+                    ? (memberProfileCompleted ? 'Switch to Member' : 'Become a Member') 
+                    : (hasCompletedListenerProfile ? 'Switch to Listener' : 'Become a Listener')}
                 </span>
               </Button>
               <Separator />
