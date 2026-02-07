@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Home, MessageCircle, User, HeartHandshake, Bell, LogOut, Settings, Shield, Repeat, AlertTriangle, Search } from 'lucide-react';
@@ -387,9 +386,15 @@ export function BottomNavBar() {
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-48 mb-4 mr-2 p-1">
-              <div className="px-2 py-1.5">
-                <p className="text-base font-semibold leading-tight truncate">{screenName || user?.email}</p>
-                <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+              <div className="px-2 py-1.5 flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={photoURL || undefined} alt={screenName || 'User'} />
+                  <AvatarFallback>{getInitials(screenName)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-base font-semibold leading-tight truncate">{screenName || user?.email}</p>
+                  <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+                </div>
               </div>
               <Separator />
               {role === 'listener' && (
